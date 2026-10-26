@@ -1,0 +1,44 @@
+{
+  "@@locale": "en",
+  "appTitle": "Aura Music",
+  "@appTitle": {
+    "description": "Application name shown in the task switcher and About."
+  },
+  "aboutTitle": "About",
+  "@aboutTitle": {
+    "description": "Title of the About settings page."
+  },
+  "aboutVersion": "Version {version}",
+  "@aboutVersion": {
+    "description": "Installed build label, e.g. Version 1.0.0+1.",
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "aboutPrivacy": "A premium, privacy-first music player. Your library and playback history stay on this device - no account, no telemetry.",
+  "@aboutPrivacy": {
+    "description": "Privacy statement on the About page."
+  },
+  "glassTierTitle": "Glass tier",
+  "@glassTierTitle": {
+    "description": "Row label for the auto-detected rendering tier."
+  },
+  "glassTierSubtitle": "Auto-detected from this device",
+  "@glassTierSubtitle": {
+    "description": "Explanation for the glass tier row."
+  },
+  "audioTitle": "Audio & EQ",
+  "@audioTitle": {
+    "description": "Title of the Audio and equalizer settings page."
+  },
+  "updatesTitle": "Updates",
+  "@updatesTitle": {
+    "description": "Title of the Updates settings page."
+  },
+  "settingsTitle": "Settings",
+  "@settingsTitle": {
+    "description": "Title of the Settings page."
+  }
+}

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Aura is a dark-only app, so the Android window stays dark in both
+         system modes. A light window background flashed white on app start and
+         let the OS's rotation animation show a bright/squeezed frame behind
+         the Flutter surface while the new size was being laid out. -->
+    <color name="aura_window_background">#FF07080C</color>
+	<color name="ic_launcher_background">#020310</color>
+</resources>
