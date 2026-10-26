@@ -59,7 +59,7 @@ any other streaming provider**; see the [disclaimer](DISCLAIMER.md).
 | **Lyrics** | LRCLIB primary with Unison fallback; LRC/TTML parsing |
 | **Party mode** | Experimental BLE host/guest queue sync. It does **not** stream audio between devices |
 | **Privacy & security** | Encrypted local database, key in platform secure storage, app lock, Android screenshot blocking, Android backup/device-transfer disabled, and no analytics SDK |
-| **UI & theming** | Dark glass surfaces, AMOLED option, dynamic accent colors, responsive bottom bar/rail, max-width layouts, and large-screen master/detail views |
+| **UI & theming** | Dark glass surfaces, AMOLED option, dynamic accent colors, responsive bottom bar/rail, max-width layouts, and a library master/detail view |
 | **Localization** | Partial ARB-based localization; the UI is currently English-first |
 
 ## Screenshots
