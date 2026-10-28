@@ -1,5 +1,7 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
+
+import 'package:aura_music/core/theme/tokens.dart';
 
 /// Cross-fades the four tab stacks when the bottom navigation changes branch
 /// (PRD 8.2 motion). Every branch stays mounted, so scroll positions, search
@@ -11,7 +13,7 @@ final class AnimatedBranchStack extends StatelessWidget {
     super.key,
     required this.currentIndex,
     required this.children,
-    this.duration = const Duration(milliseconds: 320),
+    this.duration = AppDurations.medium,
   }) : assert(children.length > 0, 'At least one branch is required.');
 
   /// Active branch index ([StatefulNavigationShell.currentIndex]).
@@ -20,7 +22,7 @@ final class AnimatedBranchStack extends StatelessWidget {
   /// Branch navigators, in branch order.
   final List<Widget> children;
 
-  /// Fade/slide duration; slightly slow so the change reads as a transition.
+  /// Fade/slide duration; the token keeps tab changes in the 220 ms band.
   final Duration duration;
 
   @override

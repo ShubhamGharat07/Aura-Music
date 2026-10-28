@@ -6,7 +6,13 @@ import 'package:aura_music/core/theme/colors.dart';
 import 'package:aura_music/core/theme/tokens.dart';
 import 'package:aura_music/core/theme/typography.dart';
 
-/// Media card for albums / artists / playlists (PRD 7.5).
+/// Media card for albums / artists / tracks (PRD 7.5).
+///
+/// The artwork is the card. No floating play disc, no dark gradient, no heavy
+/// shadow: those overlays are the fastest way to make a music grid look like a
+/// template instead of a library.
+
+/// Media card.
 final class MediaCard extends StatelessWidget {
   /// Creates a media card.
   const MediaCard({
@@ -40,18 +46,11 @@ final class MediaCard extends StatelessWidget {
         children: [
           AspectRatio(
             aspectRatio: 1,
-            child: Container(
+            child: DecoratedBox(
               decoration: BoxDecoration(
                 borderRadius: radius,
                 color: AppColors.bgElevated,
                 border: Border.all(color: AppColors.glassBorder, width: 0.6),
-                boxShadow: const [
-                  BoxShadow(
-                    color: Color(0x40000000),
-                    blurRadius: 12,
-                    offset: Offset(0, 6),
-                  ),
-                ],
               ),
               child: ClipRRect(
                 borderRadius: radius,
@@ -61,7 +60,7 @@ final class MediaCard extends StatelessWidget {
                         child: Icon(
                           Icons.album_outlined,
                           color: AppColors.textTertiary,
-                          size: 32.r,
+                          size: 30.r,
                         ),
                       )
                     : CachedNetworkImage(
@@ -77,24 +76,31 @@ final class MediaCard extends StatelessWidget {
                           child: Icon(
                             Icons.album_outlined,
                             color: AppColors.textTertiary,
-                            size: 32.r,
+                            size: 30.r,
                           ),
                         ),
                       ),
               ),
             ),
           ),
-          SizedBox(height: AppSpacing.sm),
+          SizedBox(height: 10.w),
           Text(
             title,
-            style: AppTypography.subtitle.copyWith(fontSize: 13.5.sp),
+            style: AppTypography.subtitle.copyWith(
+              fontSize: 13.sp,
+              fontWeight: FontWeight.w600,
+              letterSpacing: -0.15,
+            ),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
-          SizedBox(height: 2.h),
+          SizedBox(height: 3.w),
           Text(
             subtitle,
-            style: AppTypography.caption,
+            style: AppTypography.caption.copyWith(
+              fontSize: 11.5.sp,
+              color: AppColors.textSecondary,
+            ),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),

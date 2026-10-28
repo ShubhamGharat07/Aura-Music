@@ -39,7 +39,6 @@ final class LibraryPage extends StatelessWidget {
         ),
       ],
       child: Scaffold(
-        appBar: AppBar(title: const Text('Library')),
         body: MaxContentWidth(
           child: sizeClass.isExpandedUp
               ? Padding(
@@ -55,21 +54,21 @@ final class LibraryPage extends StatelessWidget {
   Widget _buildSections(BuildContext context) {
     final pad = ResponsiveInsets.side(WindowSizeClass.of(context));
     final sections = <Widget>[
-      LibraryOverview(),
-      SizedBox(height: 16.w),
+      const LibraryHeader(),
+      SizedBox(height: 30.w),
       LibraryShortcuts(),
-      SizedBox(height: 20.w),
+      SizedBox(height: 30.w),
       LibraryCollections(selectMode: false),
-      SizedBox(height: 20.w),
+      SizedBox(height: 30.w),
       LikedSection(scrollable: false, limit: 4),
-      SizedBox(height: 20.w),
+      SizedBox(height: 30.w),
       DiscoverSection(scrollable: false, limit: 5),
       SizedBox(height: 8.w),
     ];
     return ListView.builder(
       padding: EdgeInsets.fromLTRB(
         pad,
-        8.w,
+        12.w,
         pad,
         MediaQuery.paddingOf(context).bottom + 16.w,
       ),
@@ -85,8 +84,10 @@ final class _MasterPane extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final sections = <Widget>[
+      const LibraryHeader(),
+      SizedBox(height: 20.w),
       LibraryShortcuts(),
-      SizedBox(height: 16.w),
+      SizedBox(height: 30.w),
       LibraryCollections(selectMode: true),
     ];
     return ListView.builder(

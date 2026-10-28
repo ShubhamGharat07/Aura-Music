@@ -80,7 +80,7 @@ final class HomeArtists extends StatelessWidget {
       physics: const NeverScrollableScrollPhysics(),
       padding: EdgeInsets.symmetric(horizontal: padding),
       itemCount: 5,
-      separatorBuilder: (_, _) => SizedBox(width: 12.w),
+      separatorBuilder: (_, _) => SizedBox(width: 14.w),
       itemBuilder: (_, _) => SizedBox(
         width: _bubble,
         child: Column(
@@ -91,7 +91,7 @@ final class HomeArtists extends StatelessWidget {
               borderRadius: BorderRadius.circular(_avatar / 2),
             ),
             SizedBox(height: 8.w),
-            Skeleton(width: 64.w, height: 10.w),
+            Skeleton(width: 70.w, height: 12.w),
           ],
         ),
       ),
@@ -102,7 +102,7 @@ final class HomeArtists extends StatelessWidget {
     scrollDirection: Axis.horizontal,
     padding: EdgeInsets.symmetric(horizontal: padding),
     itemCount: section.artists.length,
-    separatorBuilder: (_, _) => SizedBox(width: 12.w),
+    separatorBuilder: (_, _) => SizedBox(width: 14.w),
     itemBuilder: (_, i) =>
         _ArtistBubble(artist: section.artists[i], size: _bubble),
   );

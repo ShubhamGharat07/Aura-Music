@@ -25,6 +25,7 @@ import 'package:aura_music/features/settings/presentation/pages/updates_settings
 import 'package:aura_music/features/home/presentation/bloc/albums_cubit.dart';
 import 'package:aura_music/features/home/presentation/pages/albums_page.dart';
 import 'package:aura_music/features/home/presentation/pages/home_page.dart';
+import 'package:aura_music/features/home/presentation/pages/top_picks_page.dart';
 
 /// App router (PRD 6.2). `StatefulShellRoute` keeps per-tab stacks and
 /// scroll positions across rotation / resize (journey J7).
@@ -139,6 +140,10 @@ GoRouter buildRouter() {
       GoRoute(
         path: AppRoutes.player,
         builder: (context, state) => const PlayerPage(),
+      ),
+      GoRoute(
+        path: AppRoutes.topPicks,
+        builder: (context, state) => const TopPicksPage(),
       ),
       GoRoute(
         path: '${AppRoutes.album}/:id',

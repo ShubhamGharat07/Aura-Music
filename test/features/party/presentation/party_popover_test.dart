@@ -129,8 +129,8 @@ void main() {
     );
     getIt.registerSingleton<PartyBloc>(party);
     addTearDown(() async {
-      await party.close();
-      await player.close();
+      unawaited(party.close());
+      unawaited(player.close());
       await controller.dispose();
       await repository.close();
       await getIt.reset();

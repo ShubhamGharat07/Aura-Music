@@ -5,6 +5,7 @@ import 'package:flutter/widgets.dart';
 import 'package:aura_music/core/di/injection.dart';
 import 'package:aura_music/core/services/audio_session_service.dart';
 import 'package:aura_music/core/services/device_tier_service.dart';
+import 'package:aura_music/core/services/performance_probe.dart';
 import 'package:aura_music/core/services/playback/media_session_service.dart';
 import 'package:aura_music/core/services/secure_key_service.dart';
 import 'package:aura_music/database/app_database.dart';
@@ -20,6 +21,7 @@ import 'package:aura_music/features/settings/presentation/bloc/theme_cubit.dart'
 /// Returns the router-ready database handle for queue restore (Phase 1).
 Future<AppDatabase> bootstrap() async {
   WidgetsFlutterBinding.ensureInitialized();
+  PerformanceProbe.install();
   await configureDependencies();
   await getIt<SecureKeyService>().getOrCreateKey();
   await getIt<AudioSessionService>().configure();

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
+import 'package:aura_music/core/theme/colors.dart';
 import 'package:aura_music/core/theme/tokens.dart';
 import 'package:aura_music/core/theme/typography.dart';
 import 'package:aura_music/features/player/domain/entities/track.dart';
@@ -42,10 +43,15 @@ final class PlayerHeader extends StatelessWidget {
           icon: Icon(Icons.expand_more_rounded, size: 30.r),
         ),
         Expanded(
-          child: Text(
-            'NOW PLAYING',
-            textAlign: TextAlign.center,
-            style: AppTypography.overline.copyWith(letterSpacing: 2),
+          child: Center(
+            child: Text(
+              'NOW PLAYING',
+              style: AppTypography.overline.copyWith(
+                letterSpacing: 1.8,
+                fontSize: 9.5.sp,
+                color: AppColors.textTertiary,
+              ),
+            ),
           ),
         ),
         Builder(
@@ -111,28 +117,40 @@ final class TrackInfo extends StatelessWidget {
             Flexible(
               child: Text(
                 track.title,
-                maxLines: 1,
+                maxLines: 2,
                 overflow: TextOverflow.ellipsis,
                 textAlign: centered ? TextAlign.center : TextAlign.start,
-                style: AppTypography.display.copyWith(fontSize: 28.sp),
+                style: AppTypography.display.copyWith(
+                  fontSize: 27.sp,
+                  height: 1.18,
+                  letterSpacing: -0.6,
+                ),
               ),
             ),
             SizedBox(width: 4.w),
             IconButton(
               onPressed: onLike,
+              iconSize: 21.r,
+              padding: EdgeInsets.zero,
+              constraints: BoxConstraints.tightFor(width: 32.w, height: 32.w),
+              color: liked ? accent : AppColors.textSecondary,
               icon: Icon(
                 liked ? Icons.favorite_rounded : Icons.favorite_border_rounded,
               ),
-              color: liked ? accent : Colors.white70,
             ),
           ],
         ),
+        SizedBox(height: 3.h),
         Text(
           track.subtitle,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
           textAlign: centered ? TextAlign.center : TextAlign.start,
-          style: AppTypography.body.copyWith(color: Colors.white70),
+          style: AppTypography.body.copyWith(
+            color: AppColors.textSecondary,
+            fontSize: 14.5.sp,
+            fontWeight: FontWeight.w500,
+          ),
         ),
       ],
     );

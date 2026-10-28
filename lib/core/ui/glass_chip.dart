@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import 'package:aura_music/core/services/device_tier_service.dart';
@@ -40,7 +40,6 @@ final class GlassChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final accent = Theme.of(context).colorScheme.primary;
     return GlassSurface.fake(
       borderRadius: AppRadius.pill,
       child: InkWell(
@@ -48,36 +47,38 @@ final class GlassChip extends StatelessWidget {
         borderRadius: BorderRadius.circular(AppRadius.pill),
         child: AnimatedContainer(
           duration: AppDurations.fast,
-          curve: Curves.easeOutCubic,
+          curve: AppCurves.out,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(AppRadius.pill),
             color: selected
-                ? accent.withValues(alpha: 0.18)
+                ? AppColors.textPrimary.withValues(alpha: 0.10)
                 : Colors.transparent,
-            border: selected
-                ? Border.all(color: accent.withValues(alpha: 0.45), width: 0.8)
-                : null,
+            border: Border.all(
+              color: selected
+                  ? AppColors.textPrimary.withValues(alpha: 0.24)
+                  : AppColors.glassBorder,
+              width: 0.7,
+            ),
           ),
           alignment: Alignment.center,
-          padding: EdgeInsets.symmetric(
-            horizontal: AppSpacing.lg,
-            vertical: 7.h,
-          ),
+          padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 6.h),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
               if (icon != null) ...[
                 Icon(
                   icon,
-                  size: 15.r,
-                  color: selected ? accent : AppColors.textSecondary,
+                  size: 16.r,
+                  color: selected
+                      ? AppColors.textPrimary
+                      : AppColors.textSecondary,
                 ),
                 SizedBox(width: 6.w),
               ],
               Text(
                 label,
                 style: AppTypography.body.copyWith(
-                  fontSize: 13.sp,
+                  fontSize: 14.5.sp,
                   fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
                   color: selected
                       ? AppColors.textPrimary

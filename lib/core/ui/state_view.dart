@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import 'package:aura_music/core/theme/typography.dart';
+import 'package:aura_music/core/ui/aura_loader.dart';
 
 /// Loading / empty / error / offline state view (PRD Section 14).
 
@@ -46,7 +47,7 @@ final class StateView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (kind == StateKind.loading) {
-      return Center(child: loadingSlot ?? const CircularProgressIndicator());
+      return Center(child: loadingSlot ?? AuraLoader(label: message));
     }
     final icon = switch (kind) {
       StateKind.empty => Icons.inbox_outlined,

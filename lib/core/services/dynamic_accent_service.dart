@@ -4,8 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:palette_generator/palette_generator.dart';
 
 /// Extracts a track accent from album artwork and clamps it to the design
-/// range (PRD F06 / 8.2): hue is kept, saturation lands in 45-75% and
-/// lightness in 55-70%, so text and icons stay readable on every artwork.
+/// range (PRD F06 / 8.2): hue is kept, saturation lands near 30-52% and
+/// lightness in 62-75%, so the result reads as a dusty tint instead of a
+/// saturated poster colour.
 ///
 /// Results are cached with a TTL + LRU cap: the same cover scrolled back into
 /// view costs zero decode work, and a long session cannot grow the map
@@ -62,8 +63,8 @@ final class DynamicAccentService {
   static Color clampAccent(Color color) {
     final hsl = HSLColor.fromColor(color);
     return hsl
-        .withSaturation(hsl.saturation.clamp(0.45, 0.75).toDouble())
-        .withLightness(hsl.lightness.clamp(0.55, 0.70).toDouble())
+        .withSaturation(hsl.saturation.clamp(0.30, 0.52).toDouble())
+        .withLightness(hsl.lightness.clamp(0.62, 0.75).toDouble())
         .toColor();
   }
 

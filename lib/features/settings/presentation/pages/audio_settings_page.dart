@@ -90,7 +90,13 @@ final class AudioSettingsPage extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Equalizer', style: AppTypography.title),
+                      Text(
+                        'Equalizer',
+                        style: AppTypography.subtitle.copyWith(
+                          fontSize: 17.sp,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
                       SizedBox(height: 6.w),
                       const Text(
                         'The five-band EQ ships with the on-device DSP engine. '

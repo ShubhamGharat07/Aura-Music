@@ -15,7 +15,7 @@ final class PlayerArtwork extends StatelessWidget {
     this.onNext,
     this.onPrevious,
     this.onDoubleTap,
-    this.radius = 28,
+    this.radius = 20,
   });
 
   /// Accent colour for the gradient fallback.
@@ -50,36 +50,48 @@ final class PlayerArtwork extends StatelessWidget {
       onDoubleTap: onDoubleTap,
       child: AspectRatio(
         aspectRatio: 1,
-        child: DecoratedBox(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(radius),
-            boxShadow: [
-              BoxShadow(
-                color: accent.withValues(alpha: 0.35),
-                blurRadius: 48,
-                spreadRadius: -8,
-                offset: const Offset(0, 24),
-              ),
-              const BoxShadow(
-                color: Colors.black54,
-                blurRadius: 24,
-                offset: Offset(0, 12),
-              ),
-            ],
-          ),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(radius),
-            child: artUrl == null
-                ? _placeholder()
-                : CachedNetworkImage(
-                    imageUrl: artUrl!,
-                    memCacheWidth: 720,
-                    memCacheHeight: 720,
-                    fit: BoxFit.cover,
-                    fadeInDuration: const Duration(milliseconds: 220),
-                    errorWidget: (context, url, error) => _placeholder(),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            // Decode close to the on-screen size instead of a fixed 720 px.
+            // Tablets get sharper art; phones stop wasting memory on a
+            // bitmap larger than the slot.
+            final dpr = MediaQuery.devicePixelRatioOf(context);
+            final cacheSize = (constraints.maxWidth * dpr).round().clamp(
+              256,
+              1024,
+            );
+            return ClipRRect(
+              borderRadius: BorderRadius.circular(radius),
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  if (artUrl == null)
+                    _placeholder()
+                  else
+                    CachedNetworkImage(
+                      imageUrl: artUrl!,
+                      memCacheWidth: cacheSize,
+                      memCacheHeight: cacheSize,
+                      fit: BoxFit.cover,
+                      fadeInDuration: const Duration(milliseconds: 220),
+                      placeholder: (context, url) => _placeholder(),
+                      errorWidget: (context, url, error) => _placeholder(),
+                    ),
+                  IgnorePointer(
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(radius),
+                        border: Border.all(
+                          color: Colors.white.withValues(alpha: 0.1),
+                          width: 0.7,
+                        ),
+                      ),
+                    ),
                   ),
-          ),
+                ],
+              ),
+            );
+          },
         ),
       ),
     );

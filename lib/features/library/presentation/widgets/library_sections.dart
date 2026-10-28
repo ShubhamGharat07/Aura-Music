@@ -6,8 +6,8 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:aura_music/core/router/routes.dart';
+import 'package:aura_music/core/theme/colors.dart';
 import 'package:aura_music/core/theme/typography.dart';
-import 'package:aura_music/core/ui/glass_surface.dart';
 import 'package:aura_music/core/ui/section_header.dart';
 import 'package:aura_music/core/ui/song_tile.dart';
 import 'package:aura_music/core/ui/state_view.dart';
@@ -198,15 +198,20 @@ final class _EmptyHint extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GlassSurface.fake(
-      borderRadius: 14,
-      margin: EdgeInsets.only(top: 8.w),
-      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 18.w),
+    return Padding(
+      padding: EdgeInsets.symmetric(vertical: 14.w),
       child: Row(
         children: [
-          Icon(icon, size: 22.r, color: Theme.of(context).colorScheme.primary),
-          SizedBox(width: 12.w),
-          Expanded(child: Text(message, style: AppTypography.body)),
+          Icon(icon, size: 20.r, color: AppColors.textSecondary),
+          SizedBox(width: 10.w),
+          Expanded(
+            child: Text(
+              message,
+              style: AppTypography.body.copyWith(
+                color: AppColors.textSecondary,
+              ),
+            ),
+          ),
         ],
       ),
     );

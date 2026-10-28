@@ -1,3 +1,4 @@
+import 'package:flutter/animation.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 /// Spacing / radius / motion / layout tokens (PRD 8.2).
@@ -30,19 +31,35 @@ abstract final class AppRadius {
   static double get chip => 10.r;
 
   /// Cards & list tiles.
-  static double get card => 14.r;
+  static double get card => 16.r;
 
   /// Bottom sheets.
-  static double get sheet => 28.r;
+  static double get sheet => 32.r;
 
   /// Album art in carousels/lists.
-  static double get art => 12.r;
+  static double get art => 14.r;
 
   /// Album art on the full player.
-  static double get artPlayer => 22.r;
+  static double get artPlayer => 24.r;
 
   /// Pills / floating bars.
   static double get pill => 999.r;
+}
+
+/// Motion curves shared by every component (PRD 8.2).
+///
+/// The built-in `Curves.easeOut*` curves are too soft for UI chrome: these
+/// start faster and settle sooner, so a 200 ms transition reads as instant
+/// feedback instead of a fade.
+abstract final class AppCurves {
+  /// Entering / responding to the user.
+  static const Curve out = Cubic(0.23, 1, 0.32, 1);
+
+  /// Elements already on screen moving from A to B.
+  static const Curve inOut = Cubic(0.77, 0, 0.175, 1);
+
+  /// Sheets and drawers (iOS-like).
+  static const Curve drawer = Cubic(0.32, 0.72, 0, 1);
 }
 
 /// Motion durations (easeOutCubic, PRD 8.2).

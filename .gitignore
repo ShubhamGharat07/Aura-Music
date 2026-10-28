@@ -60,3 +60,8 @@ Thumbs.db
 *.apk
 *.aab
 *.ipa
+
+# Local agent/skill tooling and working notes (never commit these)
+.agents/
+.opencode/
+skills-lock.json

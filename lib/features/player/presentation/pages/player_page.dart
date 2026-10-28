@@ -10,7 +10,6 @@ import 'package:aura_music/core/router/player_route.dart';
 import 'package:aura_music/core/theme/tokens.dart';
 import 'package:aura_music/core/ui/glass_sheet.dart';
 import 'package:aura_music/core/utils/color_from_id.dart';
-import 'package:aura_music/core/utils/context_extensions.dart';
 import 'package:aura_music/features/downloads/presentation/bloc/downloads_cubit.dart';
 import 'package:aura_music/features/library/presentation/widgets/add_to_playlist_sheet.dart';
 import 'package:aura_music/features/lyrics/presentation/bloc/lyrics_cubit.dart';
@@ -150,10 +149,7 @@ final class _PlayerView extends HookWidget {
         body: Stack(
           fit: StackFit.expand,
           children: [
-            PlayerBackground(
-              accent: accent,
-              animated: !context.prefersReducedMotion,
-            ),
+            const PlayerBackground(),
             SafeArea(child: body),
           ],
         ),

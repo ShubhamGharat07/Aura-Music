@@ -42,6 +42,7 @@ final class HomeBloc extends Bloc<HomeEvent, HomeState> {
   ) : super(const HomeState()) {
     on<HomeStarted>(_onLoad, transformer: restartable());
     on<HomeRefreshed>(_onLoad, transformer: restartable());
+    on<HomeTopPicksStarted>(_onTopPicks, transformer: restartable());
     on<HomeHistoryChanged>(_onHistory);
     on<HomeGenreSelected>(_onGenreSelected, transformer: restartable());
     on<HomeLanguageSelected>(_onLanguageSelected, transformer: restartable());
@@ -118,6 +119,16 @@ final class HomeBloc extends Bloc<HomeEvent, HomeState> {
       if (genre != null) _loadGenreTracks(emit, genre),
       if (language != null) _loadLanguageTracks(emit, language),
     ]);
+  }
+
+  /// Loads only the chart shown by the Top picks page.
+  Future<void> _onTopPicks(
+    HomeTopPicksStarted event,
+    Emitter<HomeState> emit,
+  ) async {
+    final generation = ++_generation;
+    emit(state.copyWith(trending: const TrackSection()));
+    await _loadTrending(emit, generation);
   }
 
   /// Loads the mood / genre chips. A refresh keeps the chips already on screen

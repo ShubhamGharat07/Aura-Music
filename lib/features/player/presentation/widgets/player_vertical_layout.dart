@@ -63,7 +63,7 @@ final class PlayerVerticalLayout extends StatelessWidget {
   Widget build(BuildContext context) {
     final track = state.currentTrack!;
     final controller = bloc.controller;
-    final double artMax = MediaQuery.sizeOf(context).width * 0.82;
+    final double artMax = MediaQuery.sizeOf(context).width * 0.78;
     return LayoutBuilder(
       builder: (context, constraints) {
         return SingleChildScrollView(
@@ -97,7 +97,7 @@ final class PlayerVerticalLayout extends StatelessWidget {
                               bloc.add(PlayerLikeToggled(track.id)),
                         ),
                       ),
-                      SizedBox(height: 32.w),
+                      SizedBox(height: 26.w),
                       TrackInfo(
                         track: track,
                         liked: state.isLiked(track.id),
@@ -105,7 +105,7 @@ final class PlayerVerticalLayout extends StatelessWidget {
                         centered: true,
                         onLike: () => bloc.add(PlayerLikeToggled(track.id)),
                       ),
-                      SizedBox(height: 8.w),
+                      SizedBox(height: 18.w),
                       SeekBar(
                         position: controller.position,
                         duration: controller.duration,
@@ -113,7 +113,7 @@ final class PlayerVerticalLayout extends StatelessWidget {
                         accent: accent,
                         onSeek: (d) => bloc.add(PlayerSeekRequested(d)),
                       ),
-                      SizedBox(height: 8.w),
+                      SizedBox(height: 2.w),
                       PlayerControls(
                         accent: accent,
                         status: state.status,

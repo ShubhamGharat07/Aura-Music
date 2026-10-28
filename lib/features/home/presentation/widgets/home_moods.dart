@@ -36,14 +36,14 @@ final class HomeMoods extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: EdgeInsets.only(top: AppSpacing.xs, bottom: AppSpacing.md),
+      padding: EdgeInsets.only(bottom: AppSpacing.md),
       child: SizedBox(
-        height: 44.r,
+        height: 43.r,
         child: ListView.separated(
           scrollDirection: Axis.horizontal,
           padding: EdgeInsets.symmetric(horizontal: padding),
           itemCount: genres.length + 1,
-          separatorBuilder: (_, _) => SizedBox(width: 8.w),
+          separatorBuilder: (_, _) => SizedBox(width: 9.w),
           itemBuilder: (_, i) =>
               i == 0 ? _allChip() : _genreChip(genres[i - 1]),
         ),

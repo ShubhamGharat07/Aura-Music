@@ -102,13 +102,10 @@ final class SearchIdleView extends StatelessWidget {
     BrowseStatus.ready => [
       SliverList.builder(
         itemCount: browse.length,
-        itemBuilder: (context, i) => Padding(
-          padding: EdgeInsets.only(bottom: 8.w),
-          child: SuggestionTile(
-            rank: i + 1,
-            track: browse[i],
-            onTap: () => onPlay(browse, i),
-          ),
+        itemBuilder: (context, i) => SuggestionTile(
+          rank: i + 1,
+          track: browse[i],
+          onTap: () => onPlay(browse, i),
         ),
       ),
     ],

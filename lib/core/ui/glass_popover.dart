@@ -165,11 +165,17 @@ final class _GlassPopover extends HookWidget {
 
   @override
   Widget build(BuildContext context) {
+    final reduceMotion =
+        MediaQuery.maybeOf(context)?.disableAnimations ?? false;
     final controller = useAnimationController(
-      duration: const Duration(milliseconds: 220),
-      reverseDuration: const Duration(milliseconds: 150),
+      duration: reduceMotion
+          ? Duration.zero
+          : const Duration(milliseconds: 220),
+      reverseDuration: reduceMotion
+          ? Duration.zero
+          : const Duration(milliseconds: 150),
     );
-    final animation = controller.drive(CurveTween(curve: Curves.easeOutCubic));
+    final animation = controller.drive(CurveTween(curve: AppCurves.out));
     useEffect(() {
       controller.forward();
       return null;

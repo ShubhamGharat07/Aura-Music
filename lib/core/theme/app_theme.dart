@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import 'package:aura_music/core/theme/colors.dart';
+import 'package:aura_music/core/theme/typography.dart';
 
 /// Dark-first Material theme (PRD 8.2).
 ThemeData buildDarkTheme({
@@ -19,8 +21,25 @@ ThemeData buildDarkTheme({
   return ThemeData(
     useMaterial3: true,
     brightness: Brightness.dark,
-    fontFamily: 'Inter',
+    fontFamily: 'Manrope',
     colorScheme: scheme,
+    textTheme: TextTheme(
+      displayLarge: AppTypography.hero,
+      displayMedium: AppTypography.display,
+      displaySmall: AppTypography.display.copyWith(fontSize: 28.sp),
+      headlineLarge: AppTypography.title,
+      headlineMedium: AppTypography.title,
+      headlineSmall: AppTypography.subtitle,
+      titleLarge: AppTypography.title,
+      titleMedium: AppTypography.subtitle,
+      titleSmall: AppTypography.body.copyWith(fontWeight: FontWeight.w600),
+      bodyLarge: AppTypography.body,
+      bodyMedium: AppTypography.body.copyWith(fontSize: 14.5.sp),
+      bodySmall: AppTypography.caption,
+      labelLarge: AppTypography.body.copyWith(fontWeight: FontWeight.w600),
+      labelMedium: AppTypography.caption,
+      labelSmall: AppTypography.overline,
+    ),
     scaffoldBackgroundColor: bg,
     canvasColor: bg,
     splashFactory: InkSparkle.splashFactory,
@@ -36,10 +55,14 @@ ThemeData buildDarkTheme({
         TargetPlatform.fuchsia: _SmoothPageTransitionsBuilder(),
       },
     ),
-    appBarTheme: const AppBarTheme(
+    appBarTheme: AppBarTheme(
       backgroundColor: Colors.transparent,
+      surfaceTintColor: Colors.transparent,
       elevation: 0,
+      scrolledUnderElevation: 0,
       centerTitle: false,
+      toolbarHeight: 64,
+      titleTextStyle: AppTypography.title,
     ),
     iconButtonTheme: IconButtonThemeData(
       style: IconButton.styleFrom(minimumSize: const Size(48, 48)),
@@ -48,6 +71,19 @@ ThemeData buildDarkTheme({
       backgroundColor: AppColors.glassFill,
       side: const BorderSide(color: AppColors.glassBorder, width: 0.6),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+    ),
+    switchTheme: SwitchThemeData(
+      trackColor: WidgetStateProperty.resolveWith(
+        (states) => states.contains(WidgetState.selected)
+            ? AppColors.textPrimary.withValues(alpha: 0.88)
+            : AppColors.glassFill,
+      ),
+      trackOutlineColor: const WidgetStatePropertyAll(AppColors.glassBorder),
+      thumbColor: WidgetStateProperty.resolveWith(
+        (states) => states.contains(WidgetState.selected)
+            ? AppColors.bg
+            : AppColors.textSecondary,
+      ),
     ),
     dialogTheme: DialogThemeData(
       backgroundColor: AppColors.bgElevated,

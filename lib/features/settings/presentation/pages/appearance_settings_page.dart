@@ -60,6 +60,7 @@ final class _AppearanceCard extends StatelessWidget {
               Text('Blur intensity; Auto matches your device tier.'),
               SizedBox(height: 12.w),
               SegmentedButton<GlassTier?>(
+                showSelectedIcon: false,
                 segments: const [
                   ButtonSegment(value: null, label: Text('Auto')),
                   ButtonSegment(value: GlassTier.high, label: Text('High')),

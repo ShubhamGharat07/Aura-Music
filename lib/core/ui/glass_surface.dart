@@ -1,4 +1,4 @@
-﻿import 'dart:ui';
+import 'dart:ui';
 
 import 'package:flutter/material.dart';
 
@@ -14,7 +14,7 @@ final class GlassSurface extends StatelessWidget {
     super.key,
     required this.child,
     this.borderRadius = 16,
-    this.sigma = 28,
+    this.sigma = 24,
     this.tier = GlassTier.high,
     this.padding,
     this.margin,

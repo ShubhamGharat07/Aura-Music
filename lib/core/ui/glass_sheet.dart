@@ -13,12 +13,23 @@ abstract final class GlassSheet {
   static Future<T?> show<T>(BuildContext context, WidgetBuilder builder) {
     final sizeClass = WindowSizeClass.of(context);
     final wide = sizeClass.isMediumUp;
+    final reduceMotion =
+        MediaQuery.maybeOf(context)?.disableAnimations ?? false;
     return showModalBottomSheet<T>(
       context: context,
       useRootNavigator: true,
       isScrollControlled: true,
       useSafeArea: true,
       backgroundColor: Colors.transparent,
+      sheetAnimationStyle: AnimationStyle(
+        duration: reduceMotion
+            ? Duration.zero
+            : const Duration(milliseconds: 260),
+        reverseDuration: reduceMotion
+            ? Duration.zero
+            : const Duration(milliseconds: 180),
+        curve: AppCurves.out,
+      ),
       constraints: wide ? const BoxConstraints(maxWidth: 560) : null,
       builder: (context) => GlassSurface(
         borderRadius: AppRadius.sheet,
@@ -27,7 +38,9 @@ abstract final class GlassSheet {
           left: AppSpacing.lg,
           right: AppSpacing.lg,
           top: AppSpacing.lg,
-          bottom: MediaQuery.viewInsetsOf(context).bottom + AppSpacing.lg,
+          bottom: MediaQuery.viewInsetsOf(context).bottom +
+              MediaQuery.viewPaddingOf(context).bottom +
+              AppSpacing.lg,
         ),
         child: builder(context),
       ),

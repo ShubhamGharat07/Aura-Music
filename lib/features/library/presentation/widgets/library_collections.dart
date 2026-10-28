@@ -8,7 +8,6 @@ import 'package:aura_music/core/router/routes.dart';
 import 'package:aura_music/core/theme/colors.dart';
 import 'package:aura_music/core/theme/tokens.dart';
 import 'package:aura_music/core/theme/typography.dart';
-import 'package:aura_music/core/ui/glass_surface.dart';
 import 'package:aura_music/core/ui/song_tile.dart';
 import 'package:aura_music/features/catalog/presentation/catalog_playback.dart';
 import 'package:aura_music/features/library/domain/entities/user_playlist.dart';
@@ -173,6 +172,9 @@ final class LibraryCollections extends StatelessWidget {
     List<LibraryCollection> rows,
     bool create,
   ) {
+    if (create && rows.isEmpty) {
+      return _NewPlaylistBanner(onTap: () => createLibraryPlaylist(context));
+    }
     final cards = <Widget>[
       if (create) _NewPlaylistCard(onTap: () => createLibraryPlaylist(context)),
       for (final row in rows)
@@ -196,7 +198,7 @@ final class LibraryCollections extends StatelessWidget {
           runSpacing: 12.w,
           children: [
             for (final card in cards)
-              SizedBox(width: width, height: width / 0.78, child: card),
+              SizedBox(width: width, height: width / 0.74, child: card),
           ],
         );
       },
@@ -257,41 +259,45 @@ final class _Controls extends StatelessWidget {
       children: [
         Row(
           children: [
-            Expanded(child: Text('Collections', style: AppTypography.title)),
-            IconButton(
+            Expanded(
+              child: Text(
+                'Collections',
+                style: AppTypography.title.copyWith(
+                  fontSize: 18.5.sp,
+                  letterSpacing: -0.45,
+                ),
+              ),
+            ),
+            _ToolButton(
               tooltip: library.view == LibraryView.grid
                   ? 'List view'
                   : 'Grid view',
-              visualDensity: VisualDensity.compact,
-              icon: Icon(
-                library.view == LibraryView.grid
-                    ? Icons.view_list_rounded
-                    : Icons.grid_view_rounded,
-              ),
-              onPressed: cubit.toggleView,
+              icon: library.view == LibraryView.grid
+                  ? Icons.view_list_rounded
+                  : Icons.grid_view_rounded,
+              onTap: cubit.toggleView,
             ),
-            IconButton(
+            SizedBox(width: 2.w),
+            _ToolButton(
               tooltip: library.sort == LibrarySortOrder.recent
                   ? 'Sort: Recently added'
                   : 'Sort: Title',
-              visualDensity: VisualDensity.compact,
-              icon: const Icon(Icons.sort_rounded),
-              onPressed: cubit.cycleSort,
+              icon: Icons.sort_rounded,
+              onTap: cubit.cycleSort,
             ),
           ],
         ),
-        SizedBox(height: 4.w),
+        SizedBox(height: 8.w),
         SingleChildScrollView(
           scrollDirection: Axis.horizontal,
-          padding: EdgeInsets.only(right: 4.w),
           child: Row(
             children: [
               for (final filter in LibraryFilter.values) ...[
-                if (filter != LibraryFilter.values.first) SizedBox(width: 8.w),
-                ChoiceChip(
-                  label: Text(_filterLabel(filter)),
+                if (filter != LibraryFilter.values.first) SizedBox(width: 18.w),
+                _FilterTab(
+                  label: _filterLabel(filter),
                   selected: library.filter == filter,
-                  onSelected: (_) => cubit.selectFilter(filter),
+                  onTap: () => cubit.selectFilter(filter),
                 ),
               ],
             ],
@@ -308,6 +314,149 @@ final class _Controls extends StatelessWidget {
   };
 }
 
+final class _ToolButton extends StatelessWidget {
+  const _ToolButton({
+    required this.tooltip,
+    required this.icon,
+    required this.onTap,
+  });
+
+  final String tooltip;
+  final IconData icon;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return IconButton(
+      tooltip: tooltip,
+      onPressed: onTap,
+      style: IconButton.styleFrom(
+        minimumSize: Size(38.w, 38.w),
+        padding: EdgeInsets.zero,
+        foregroundColor: AppColors.textSecondary,
+        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+      ),
+      icon: Icon(icon, size: 20.r),
+    );
+  }
+}
+
+final class _FilterTab extends StatelessWidget {
+  const _FilterTab({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(8.r),
+        child: Padding(
+          padding: EdgeInsets.symmetric(horizontal: 2.w, vertical: 5.w),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                label,
+                style: AppTypography.body.copyWith(
+                  fontSize: 13.sp,
+                  fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
+                  color: selected
+                      ? AppColors.textPrimary
+                      : AppColors.textSecondary,
+                ),
+              ),
+              SizedBox(height: 5.w),
+              AnimatedOpacity(
+                opacity: selected ? 1 : 0,
+                duration: AppDurations.fast,
+                curve: AppCurves.out,
+                child: Container(
+                  width: 16.w,
+                  height: 2.w,
+                  decoration: BoxDecoration(
+                    color: AppColors.textPrimary,
+                    borderRadius: BorderRadius.circular(2.r),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+final class _NewPlaylistBanner extends StatelessWidget {
+  const _NewPlaylistBanner({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(AppRadius.card),
+        child: Ink(
+          decoration: BoxDecoration(
+            color: AppColors.bgElevated.withValues(alpha: 0.42),
+            borderRadius: BorderRadius.circular(AppRadius.card),
+            border: Border.all(color: AppColors.glassBorder, width: 0.6),
+          ),
+          child: Padding(
+            padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 14.w),
+            child: Row(
+              children: [
+                SizedBox(
+                  width: 34.w,
+                  child: Icon(
+                    Icons.add_rounded,
+                    size: 24.r,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                SizedBox(width: 10.w),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Create your first playlist',
+                        style: AppTypography.subtitle,
+                      ),
+                      SizedBox(height: 2.w),
+                      Text(
+                        'Group the songs you keep coming back to.',
+                        style: AppTypography.caption.copyWith(fontSize: 13.sp),
+                      ),
+                    ],
+                  ),
+                ),
+                Icon(
+                  Icons.chevron_right_rounded,
+                  size: 18.r,
+                  color: AppColors.textTertiary,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 final class _NewPlaylistCard extends StatelessWidget {
   const _NewPlaylistCard({required this.onTap});
 
@@ -315,39 +464,52 @@ final class _NewPlaylistCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final accent = Theme.of(context).colorScheme.primary;
-    return GlassSurface.fake(
-      borderRadius: 20.r,
-      padding: EdgeInsets.all(10.w),
+    return Material(
+      color: Colors.transparent,
       child: InkWell(
-        borderRadius: BorderRadius.circular(16.r),
+        borderRadius: BorderRadius.circular(AppRadius.art),
         onTap: onTap,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(
-              child: Container(
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  color: accent.withValues(alpha: 0.08),
-                  borderRadius: BorderRadius.circular(12.r),
-                  border: Border.all(
-                    color: accent.withValues(alpha: 0.35),
-                    width: 0.8,
+        child: Ink(
+          decoration: BoxDecoration(
+            color: AppColors.bgElevated.withValues(alpha: 0.42),
+            borderRadius: BorderRadius.circular(AppRadius.art),
+            border: Border.all(color: AppColors.glassBorder, width: 0.6),
+          ),
+          child: Padding(
+            padding: EdgeInsets.all(8.w),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Container(
+                    width: double.infinity,
+                    decoration: BoxDecoration(
+                      color: AppColors.textPrimary.withValues(alpha: 0.05),
+                      borderRadius: BorderRadius.circular(9.r),
+                      border: Border.all(
+                        color: AppColors.textPrimary.withValues(alpha: 0.14),
+                        width: 0.7,
+                      ),
+                    ),
+                    child: Icon(
+                      Icons.add_rounded,
+                      size: 30.r,
+                      color: AppColors.textPrimary,
+                    ),
                   ),
                 ),
-                child: Icon(Icons.add_rounded, size: 34.r, color: accent),
-              ),
+                SizedBox(height: 8.w),
+                Text(
+                  'New playlist',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTypography.subtitle,
+                ),
+                SizedBox(height: 1.w),
+                Text('Create', style: AppTypography.caption),
+              ],
             ),
-            SizedBox(height: 8.w),
-            Text(
-              'New playlist',
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: AppTypography.subtitle,
-            ),
-            Text('Create', style: AppTypography.caption),
-          ],
+          ),
         ),
       ),
     );
@@ -361,22 +523,42 @@ final class _NewPlaylistTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final accent = Theme.of(context).colorScheme.primary;
-    return GlassSurface.fake(
-      borderRadius: AppRadius.card,
-      child: ListTile(
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
         onTap: onTap,
-        leading: Container(
-          width: 46.r,
-          height: 46.r,
-          decoration: BoxDecoration(
-            color: accent.withValues(alpha: 0.10),
-            borderRadius: BorderRadius.circular(12.r),
+        borderRadius: BorderRadius.circular(12.r),
+        child: Padding(
+          padding: EdgeInsets.symmetric(vertical: 7.w, horizontal: 4.w),
+          child: Row(
+            children: [
+              SizedBox(
+                width: 22.w,
+                child: Icon(
+                  Icons.add_rounded,
+                  color: AppColors.textPrimary,
+                  size: 20.r,
+                ),
+              ),
+              SizedBox(width: 13.w),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('New playlist', style: AppTypography.subtitle),
+                    SizedBox(height: 1.w),
+                    Text('Create a playlist', style: AppTypography.caption),
+                  ],
+                ),
+              ),
+              Icon(
+                Icons.chevron_right_rounded,
+                size: 18.r,
+                color: AppColors.textTertiary,
+              ),
+            ],
           ),
-          child: Icon(Icons.add_rounded, color: accent),
         ),
-        title: Text('New playlist', style: AppTypography.subtitle),
-        subtitle: Text('Create a playlist', style: AppTypography.caption),
       ),
     );
   }

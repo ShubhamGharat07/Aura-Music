@@ -41,6 +41,7 @@ final class PartyBloc extends Bloc<PartyEvent, PartyState> {
     required PlayerBloc player,
     Duration publishInterval = AppConstants.partyPublishInterval,
   }) : _player = player,
+       _publishInterval = publishInterval,
        super(const PartyState()) {
     on<PartyHostRequested>(_onHost);
     on<PartyDiscoveryToggled>(_onDiscover);
@@ -57,10 +58,6 @@ final class PartyBloc extends Bloc<PartyEvent, PartyState> {
       (message) => add(PartyMessageReceived(message)),
     );
     _playerSub = _player.stream.listen((_) => add(const PartyPlayerChanged()));
-    _tick = Timer.periodic(
-      publishInterval,
-      (_) => add(const PartyTickElapsed()),
-    );
   }
 
   final WatchPartySession _watchSession;
@@ -71,10 +68,11 @@ final class PartyBloc extends Bloc<PartyEvent, PartyState> {
   final PublishPartyState _publish;
   final LeaveParty _leave;
   final PlayerBloc _player;
+  final Duration _publishInterval;
   late final StreamSubscription<Object?> _sessionSub;
   late final StreamSubscription<Object?> _messageSub;
   late final StreamSubscription<Object?> _playerSub;
-  late final Timer _tick;
+  Timer? _tick;
 
   /// Last state shared with the guests, so an unchanged queue is only re-sent
   /// as a small tick (and a tick that would say nothing new is skipped).
@@ -131,11 +129,33 @@ final class PartyBloc extends Bloc<PartyEvent, PartyState> {
   void _onSessionChanged(PartySessionChanged event, Emitter<PartyState> emit) {
     emit(state.copyWith(session: event.session, busy: false));
     if (event.session.isHosting) {
+      if (event.session.peers.isEmpty) {
+        _stopTick();
+      } else {
+        _startTick();
+      }
       unawaited(_share(forceFull: true));
-    } else if (!event.session.isActive) {
-      _shared = null;
-      _lastSeek = null;
+    } else {
+      _stopTick();
+      if (!event.session.isActive) {
+        _shared = null;
+        _lastSeek = null;
+      }
     }
+  }
+
+  /// Publishes a position tick only while this device is hosting. Idle blocs
+  /// keep no timer, so they do not wake up every few seconds for nothing.
+  void _startTick() {
+    _tick ??= Timer.periodic(
+      _publishInterval,
+      (_) => add(const PartyTickElapsed()),
+    );
+  }
+
+  void _stopTick() {
+    _tick?.cancel();
+    _tick = null;
   }
 
   /// Reacts to a message from the other side of the link.
@@ -271,7 +291,7 @@ final class PartyBloc extends Bloc<PartyEvent, PartyState> {
 
   @override
   Future<void> close() async {
-    _tick.cancel();
+    _tick?.cancel();
     await _sessionSub.cancel();
     await _messageSub.cancel();
     await _playerSub.cancel();

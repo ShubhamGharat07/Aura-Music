@@ -1,4 +1,4 @@
-﻿import 'dart:async';
+import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -142,7 +142,7 @@ void main() {
   late _SilentController controller;
 
   setUp(() async {
-    await getIt.reset();
+    await getIt.reset(dispose: false);
     controller = _SilentController();
     getIt.registerLazySingleton<PlayerBloc>(
       () =>
@@ -181,7 +181,7 @@ void main() {
 
   tearDown(() async {
     await controller.dispose();
-    await getIt.reset();
+    await getIt.reset(dispose: false);
   });
 
   for (final size in kWindowSizes) {

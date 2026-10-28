@@ -1,7 +1,9 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
+import 'package:aura_music/core/theme/tokens.dart';
 import 'package:aura_music/core/theme/typography.dart';
 import 'package:aura_music/core/ui/state_view.dart';
 import 'package:aura_music/features/lyrics/domain/entities/lyrics.dart';
@@ -92,33 +94,86 @@ final class _SyncedLyrics extends StatelessWidget {
         ),
       );
     }
-    return ValueListenableBuilder<Duration>(
-      valueListenable: position,
-      builder: (context, pos, _) {
-        final active = lyrics.activeIndex(pos);
-        return ListView.builder(
-          padding: EdgeInsets.symmetric(vertical: 24.w, horizontal: 8.w),
-          itemCount: lyrics.lines.length,
-          itemBuilder: (context, i) {
-            final isActive = i == active;
-            return Padding(
-              padding: EdgeInsets.symmetric(vertical: 10.w),
-              child: Text(
-                lyrics.lines[i].text,
-                textAlign: TextAlign.center,
-                style: (isActive ? AppTypography.title : AppTypography.body)
-                    .copyWith(
-                      fontSize: (isActive ? 22.0 : 17.0) * fontScale,
-                      color: isActive
-                          ? accent
-                          : Colors.white.withValues(alpha: 0.5),
-                      fontWeight: isActive ? FontWeight.w700 : FontWeight.w400,
-                    ),
-              ),
-            );
-          },
-        );
-      },
+    return _ActiveLyrics(
+      lyrics: lyrics,
+      position: position,
+      accent: accent,
+      fontScale: fontScale,
     );
+  }
+}
+
+/// Rebuilds the lyric list only when the active *line* changes.
+///
+/// Position ticks at >=10 Hz; mapping each tick to a widget rebuild re-lays out
+/// the whole list several times a second. A [ValueNotifier<int>] that only
+/// changes on line transitions keeps the panel quiet between lines.
+final class _ActiveLyrics extends HookWidget {
+  const _ActiveLyrics({
+    required this.lyrics,
+    required this.position,
+    required this.accent,
+    required this.fontScale,
+  });
+
+  final Lyrics lyrics;
+  final ValueListenable<Duration> position;
+  final Color accent;
+  final double fontScale;
+
+  @override
+  Widget build(BuildContext context) {
+    final active = useMemoized(() => _ActiveIndexNotifier(position, lyrics), [
+      position,
+      lyrics,
+    ]);
+    useEffect(() => active.dispose, [active]);
+
+    return ValueListenableBuilder<int?>(
+      valueListenable: active,
+      builder: (context, activeIndex, _) => ListView.builder(
+        padding: EdgeInsets.symmetric(vertical: 24.w, horizontal: 8.w),
+        itemCount: lyrics.lines.length,
+        itemBuilder: (context, i) {
+          final isActive = i == activeIndex;
+          final style = (isActive ? AppTypography.title : AppTypography.body)
+              .copyWith(
+                fontSize: (isActive ? 22.0 : 17.0) * fontScale,
+                color: isActive ? accent : Colors.white.withValues(alpha: 0.5),
+                fontWeight: isActive ? FontWeight.w700 : FontWeight.w400,
+              );
+          return Padding(
+            padding: EdgeInsets.symmetric(vertical: 10.w),
+            child: AnimatedDefaultTextStyle(
+              duration: AppDurations.medium,
+              curve: AppCurves.out,
+              style: style,
+              child: Text(lyrics.lines[i].text, textAlign: TextAlign.center),
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
+
+final class _ActiveIndexNotifier extends ValueNotifier<int?> {
+  _ActiveIndexNotifier(this.position, this.lyrics)
+    : super(lyrics.activeIndex(position.value)) {
+    position.addListener(_sync);
+  }
+
+  final ValueListenable<Duration> position;
+  final Lyrics lyrics;
+
+  void _sync() {
+    final next = lyrics.activeIndex(position.value);
+    if (next != value) value = next;
+  }
+
+  @override
+  void dispose() {
+    position.removeListener(_sync);
+    super.dispose();
   }
 }

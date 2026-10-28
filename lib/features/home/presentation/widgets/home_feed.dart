@@ -38,20 +38,20 @@ final class HomeFeedLayout {
 
   /// Compact phone metrics.
   const HomeFeedLayout.compact()
-    : padding = 16,
-      quickPickColumns = 2,
-      cardWidth = 148,
-      carouselHeight = 204,
-      playlistCardWidth = 154,
+    : padding = 20,
+      quickPickColumns = 3,
+      cardWidth = 156,
+      carouselHeight = 226,
+      playlistCardWidth = 164,
       showArrows = false;
 
   /// Medium / Expanded / Large metrics.
   const HomeFeedLayout.wide()
-    : padding = 24,
-      quickPickColumns = 3,
-      cardWidth = 168,
-      carouselHeight = 224,
-      playlistCardWidth = 172,
+    : padding = 28,
+      quickPickColumns = 6,
+      cardWidth = 176,
+      carouselHeight = 246,
+      playlistCardWidth = 184,
       showArrows = true;
 
   /// Horizontal inset.
@@ -156,9 +156,9 @@ List<Widget> _sectionList(
     ),
   );
 
-  // Slice trending so Quick Picks (first 6) and the Trending carousel do not
+  // Slice trending so the six-song opener and the Trending carousel do not
   // repeat the same songs.
-  final quickPickCount = (layout.quickPickColumns * 3).clamp(4, 6);
+  const quickPickCount = 6;
 
   final selectedGenre = state.selectedGenre;
   final selectedLanguage = state.selectedLanguage;
@@ -169,6 +169,24 @@ List<Widget> _sectionList(
       HomeOffline(padding: layout.padding),
       continueListening(),
     ] else ...[
+      BlocSelector<HomeBloc, HomeState, TrackSection>(
+        selector: (state) => state.trending,
+        builder: (context, section) => SectionSwap(
+          status: section.status,
+          child: HomeQuickPicks(
+            section: section,
+            padding: layout.padding,
+            columns: layout.quickPickColumns,
+            onRetry: retry,
+          ),
+        ),
+      ),
+      HomeLanguages(
+        padding: layout.padding,
+        languages: kCatalogLanguages,
+        selected: selectedLanguage,
+        onSelect: (language) => bloc.add(HomeLanguageSelected(language)),
+      ),
       BlocSelector<
         HomeBloc,
         HomeState,
@@ -190,18 +208,11 @@ List<Widget> _sectionList(
         ),
       ),
       if (selectedGenre == null) ...[
-        BlocSelector<HomeBloc, HomeState, TrackSection>(
-          selector: (state) => state.trending,
-          builder: (context, section) => SectionSwap(
-            status: section.status,
-            child: HomeQuickPicks(
-              section: section,
-              padding: layout.padding,
-              columns: layout.quickPickColumns,
-              onRetry: retry,
-            ),
+        if (selectedLanguage != null)
+          carousel(
+            '${selectedLanguage.name} picks',
+            (state) => state.languageTracks,
           ),
-        ),
         continueListening(),
         BlocSelector<HomeBloc, HomeState, TrackSection>(
           selector: (state) => state.trending,
@@ -268,24 +279,20 @@ List<Widget> _sectionList(
             ),
           ),
         ),
-      ] else
+      ] else ...[
         carousel(selectedGenre.name, (state) => state.genreTracks),
+        if (selectedLanguage != null)
+          carousel(
+            '${selectedLanguage.name} picks',
+            (state) => state.languageTracks,
+          ),
+      ],
     ],
     HomeYourPlaylists(
       padding: layout.padding,
       cardWidth: layout.playlistCardWidth,
     ),
-    if (!state.offline) ...[
-      HomeLanguages(
-        padding: layout.padding,
-        languages: kCatalogLanguages,
-        selected: selectedLanguage,
-        onSelect: (language) => bloc.add(HomeLanguageSelected(language)),
-      ),
-      if (selectedLanguage != null)
-        carousel(selectedLanguage.name, (state) => state.languageTracks),
-    ],
-    SizedBox(height: MediaQuery.paddingOf(context).bottom + 148.w),
+    SizedBox(height: MediaQuery.paddingOf(context).bottom + 28.w),
   ];
 }
 
@@ -310,7 +317,7 @@ final class SectionSwap extends StatelessWidget {
     return AnimatedSwitcher(
       duration: reduceMotion ? Duration.zero : AppDurations.medium,
       switchInCurve: Curves.easeOut,
-      switchOutCurve: Curves.easeIn,
+      switchOutCurve: AppCurves.out,
       child: KeyedSubtree(key: ValueKey(status), child: child),
     );
   }

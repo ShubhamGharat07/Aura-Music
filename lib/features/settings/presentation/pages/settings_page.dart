@@ -7,12 +7,10 @@ import 'package:aura_music/core/responsive/responsive_insets.dart';
 import 'package:aura_music/core/responsive/window_size_class.dart';
 import 'package:aura_music/core/router/routes.dart';
 import 'package:aura_music/core/theme/colors.dart';
-import 'package:aura_music/core/theme/tokens.dart';
 import 'package:aura_music/core/theme/typography.dart';
-import 'package:aura_music/core/ui/glass_surface.dart';
 import 'package:aura_music/l10n/generated/app_localizations.dart';
 
-/// Settings root (PRD S16). Grouped glass cards keep the list scannable; each
+/// Settings root (PRD S16). Flat grouped rows keep the list scannable; each
 /// row pushes its dedicated sub-page.
 
 /// Settings tab root.
@@ -24,19 +22,30 @@ final class SettingsPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final pad = ResponsiveInsets.side(WindowSizeClass.of(context));
     return Scaffold(
-      appBar: AppBar(title: Text(AppLocalizations.of(context).settingsTitle)),
       body: MaxContentWidth(
         child: ListView(
           padding: EdgeInsets.fromLTRB(
             pad,
-            pad,
+            12.w,
             pad,
             pad + MediaQuery.paddingOf(context).bottom,
           ),
-          children: const [
-            _BrandCard(),
-            SizedBox(height: 20),
-            _SectionLabel('Personalise'),
+          children: [
+            Text(
+              AppLocalizations.of(context).settingsTitle,
+              style: AppTypography.display.copyWith(
+                fontSize: 30.sp,
+                fontWeight: FontWeight.w800,
+                letterSpacing: -1,
+              ),
+            ),
+            SizedBox(height: 4.w),
+            Text(
+              'Private by design · Offline first',
+              style: AppTypography.caption.copyWith(fontSize: 14.sp),
+            ),
+            SizedBox(height: 34.w),
+            const _SectionLabel('Personalise'),
             _Group(
               children: [
                 _SettingsTile(
@@ -59,7 +68,7 @@ final class SettingsPage extends StatelessWidget {
                 ),
               ],
             ),
-            SizedBox(height: 20),
+            SizedBox(height: 26.w),
             _SectionLabel('Data & privacy'),
             _Group(
               children: [
@@ -77,7 +86,7 @@ final class SettingsPage extends StatelessWidget {
                 ),
               ],
             ),
-            SizedBox(height: 20),
+            SizedBox(height: 26.w),
             _SectionLabel('About'),
             _Group(
               children: [
@@ -96,64 +105,6 @@ final class SettingsPage extends StatelessWidget {
   }
 }
 
-final class _BrandCard extends StatelessWidget {
-  const _BrandCard();
-
-  @override
-  Widget build(BuildContext context) {
-    final accent = Theme.of(context).colorScheme.primary;
-    return GlassSurface.fake(
-      borderRadius: AppRadius.card,
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [accent.withValues(alpha: 0.22), AppColors.glassFill],
-          ),
-        ),
-        child: Padding(
-          padding: EdgeInsets.all(16.w),
-          child: Row(
-            children: [
-              Container(
-                width: 48.r,
-                height: 48.r,
-                decoration: BoxDecoration(
-                  color: accent.withValues(alpha: 0.18),
-                  borderRadius: BorderRadius.circular(14.r),
-                ),
-                child: Icon(
-                  Icons.graphic_eq_rounded,
-                  size: 26.r,
-                  color: accent,
-                ),
-              ),
-              SizedBox(width: 12.w),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      AppLocalizations.of(context).appTitle,
-                      style: AppTypography.title,
-                    ),
-                    SizedBox(height: 2.w),
-                    Text(
-                      'Private by design · Offline first',
-                      style: AppTypography.caption,
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
 final class _SectionLabel extends StatelessWidget {
   const _SectionLabel(this.label);
 
@@ -162,7 +113,7 @@ final class _SectionLabel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: EdgeInsets.only(left: 4.w, bottom: 8.w),
+      padding: EdgeInsets.only(left: 6.w, bottom: 10.w),
       child: Text(label.toUpperCase(), style: AppTypography.overline),
     );
   }
@@ -175,26 +126,26 @@ final class _Group extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GlassSurface.fake(
-      borderRadius: AppRadius.card,
-      padding: EdgeInsets.symmetric(vertical: 4.w),
-      child: Material(
-        type: MaterialType.transparency,
-        child: Column(
-          children: [
-            for (var i = 0; i < children.length; i++) ...[
-              if (i > 0)
-                Divider(
-                  height: 1,
-                  thickness: 1,
-                  indent: 60.w,
-                  endIndent: 14.w,
-                  color: AppColors.glassBorder,
-                ),
-              children[i],
-            ],
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.bgElevated.withValues(alpha: 0.38),
+        borderRadius: BorderRadius.circular(20.r),
+        border: Border.all(color: AppColors.glassBorder, width: 0.7),
+      ),
+      padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 4.w),
+      child: Column(
+        children: [
+          for (var i = 0; i < children.length; i++) ...[
+            if (i > 0)
+              Divider(
+                height: 1,
+                thickness: 0.6,
+                indent: 44.w,
+                color: AppColors.glassBorder,
+              ),
+            children[i],
           ],
-        ),
+        ],
       ),
     );
   }
@@ -215,23 +166,23 @@ final class _SettingsTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final accent = Theme.of(context).colorScheme.primary;
     return ListTile(
-      contentPadding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 2.w),
-      minLeadingWidth: 38.r,
-      leading: Container(
-        width: 38.r,
-        height: 38.r,
-        decoration: BoxDecoration(
-          color: accent.withValues(alpha: 0.12),
-          borderRadius: BorderRadius.circular(12.r),
-        ),
-        child: Icon(icon, size: 20.r, color: accent),
+      contentPadding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 7.w),
+      minLeadingWidth: 30.r,
+      leading: SizedBox(
+        width: 26.w,
+        child: Icon(icon, size: 22.r, color: AppColors.textSecondary),
       ),
       title: Text(title, style: AppTypography.subtitle),
-      subtitle: Text(subtitle, maxLines: 1, overflow: TextOverflow.ellipsis),
+      subtitle: Text(
+        subtitle,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: AppTypography.caption.copyWith(fontSize: 13.5.sp),
+      ),
       trailing: Icon(
         Icons.chevron_right_rounded,
+        size: 20.r,
         color: AppColors.textTertiary,
       ),
       onTap: () => context.push(route),

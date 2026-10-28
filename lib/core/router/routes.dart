@@ -30,6 +30,9 @@ abstract final class AppRoutes {
   /// Album grid browse (`/albums/:kind`, "See all" from home).
   static const String albums = '/albums';
 
+  /// Full Top picks chart (`See all` from Home).
+  static const String topPicks = '/top-picks';
+
   /// Offline downloads (nested under the Library tab).
   static const String downloads = '/library/downloads';
 

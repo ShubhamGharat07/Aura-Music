@@ -21,7 +21,7 @@ import 'package:aura_music/features/player/presentation/bloc/player_state.dart';
 // Bottom bar <-> rail morph timing. Chrome fades a little faster than the
 // rail reveal so the bar is gone before the rail has finished sliding in.
 const Duration _morphDuration = Duration(milliseconds: 320);
-const Curve _morphCurve = Curves.easeOutCubic;
+const Curve _morphCurve = AppCurves.out;
 const Duration _chromeFadeDuration = Duration(milliseconds: 200);
 
 /// Adaptive navigation shell (PRD 6.1 + 7.2).
@@ -200,7 +200,7 @@ final class _Chrome extends StatelessWidget {
           AnimatedSwitcher(
             duration: duration,
             switchInCurve: Curves.easeOut,
-            switchOutCurve: Curves.easeIn,
+            switchOutCurve: AppCurves.out,
             child: bar,
           ),
       ],

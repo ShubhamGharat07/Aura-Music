@@ -63,7 +63,7 @@ final class HomeTrackSection extends HookWidget {
         Padding(
           padding: EdgeInsets.fromLTRB(
             padding,
-            dense ? AppSpacing.sm : AppSpacing.lg,
+            dense ? AppSpacing.sm : AppSpacing.xl,
             padding,
             AppSpacing.xs,
           ),
@@ -91,7 +91,7 @@ final class HomeTrackSection extends HookWidget {
         physics: const NeverScrollableScrollPhysics(),
         padding: EdgeInsets.symmetric(horizontal: padding),
         itemCount: 4,
-        separatorBuilder: (_, _) => SizedBox(width: 12.w),
+        separatorBuilder: (_, _) => SizedBox(width: 14.w),
         itemBuilder: (_, _) => SizedBox(
           width: cardWidth,
           child: Column(
@@ -99,9 +99,9 @@ final class HomeTrackSection extends HookWidget {
             children: [
               AspectRatio(aspectRatio: 1, child: Skeleton()),
               SizedBox(height: AppSpacing.sm),
-              Skeleton(height: 11.w, width: cardWidth * 0.72),
+              Skeleton(height: 13.w, width: cardWidth * 0.72),
               SizedBox(height: 5.w),
-              Skeleton(height: 9.w, width: cardWidth * 0.5),
+              Skeleton(height: 11.w, width: cardWidth * 0.5),
             ],
           ),
         ),
@@ -136,7 +136,7 @@ final class HomeTrackSection extends HookWidget {
             scrollDirection: Axis.horizontal,
             padding: EdgeInsets.symmetric(horizontal: padding),
             itemCount: tracks.length,
-            separatorBuilder: (_, _) => SizedBox(width: 12.w),
+            separatorBuilder: (_, _) => SizedBox(width: 14.w),
             itemBuilder: (_, i) => SizedBox(
               width: cardWidth,
               child: MediaCard(

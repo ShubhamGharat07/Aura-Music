@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import 'package:aura_music/core/theme/colors.dart';
 import 'package:aura_music/features/downloads/domain/entities/download.dart';
 import 'package:aura_music/features/downloads/presentation/bloc/downloads_cubit.dart';
 import 'package:aura_music/features/player/domain/entities/track.dart';
@@ -38,7 +39,7 @@ final class DownloadButton extends StatelessWidget {
         final done = status == DownloadStatus.completed;
         return IconButton(
           tooltip: done ? 'Remove download' : 'Download',
-          color: done ? accent : null,
+          color: done ? (accent ?? AppColors.textPrimary) : null,
           icon: Icon(switch (status) {
             DownloadStatus.completed => Icons.download_done_rounded,
             DownloadStatus.downloading ||

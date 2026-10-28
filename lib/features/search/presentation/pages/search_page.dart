@@ -9,6 +9,8 @@ import 'package:aura_music/core/hooks/use_debounced_value.dart';
 import 'package:aura_music/core/responsive/max_content_width.dart';
 import 'package:aura_music/core/responsive/responsive_insets.dart';
 import 'package:aura_music/core/responsive/window_size_class.dart';
+import 'package:aura_music/core/theme/colors.dart';
+import 'package:aura_music/core/theme/typography.dart';
 import 'package:aura_music/core/ui/state_view.dart';
 import 'package:aura_music/features/catalog/presentation/catalog_playback.dart';
 import 'package:aura_music/features/search/presentation/bloc/search_bloc.dart';
@@ -53,7 +55,15 @@ final class SearchPage extends HookWidget {
         child: Padding(
           padding: EdgeInsets.all(ResponsiveInsets.side(sizeClass)),
           child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              Text('Search', style: AppTypography.display),
+              SizedBox(height: 6.w),
+              Text(
+                'Find the next thing on repeat.',
+                style: AppTypography.caption.copyWith(fontSize: 14.sp),
+              ),
+              SizedBox(height: 22.w),
               _SearchField(controller: controller),
               SizedBox(height: 16.w),
               Expanded(
@@ -105,7 +115,33 @@ final class _SearchField extends HookWidget {
     }, [query]);
     return SearchBar(
       controller: controller,
-      hintText: 'Search songs, albums, artists',
+      hintText: 'Songs, albums, artists',
+      elevation: const WidgetStatePropertyAll(0),
+      backgroundColor: WidgetStatePropertyAll(
+        AppColors.bgElevated.withValues(alpha: 0.62),
+      ),
+      side: const WidgetStatePropertyAll(
+        BorderSide(color: AppColors.glassBorder, width: 0.7),
+      ),
+      shape: WidgetStatePropertyAll(
+        RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.r)),
+      ),
+      constraints: BoxConstraints(minHeight: 56.w),
+      padding: WidgetStatePropertyAll(
+        EdgeInsets.symmetric(horizontal: 16.w, vertical: 4.w),
+      ),
+      textStyle: WidgetStatePropertyAll(AppTypography.body),
+      hintStyle: WidgetStatePropertyAll(
+        AppTypography.body.copyWith(
+          color: AppColors.textTertiary,
+          fontSize: 14.5.sp,
+        ),
+      ),
+      leading: Icon(
+        Icons.search_rounded,
+        size: 22.r,
+        color: AppColors.textSecondary,
+      ),
       onSubmitted: (value) =>
           context.read<SearchBloc>().add(SearchSubmitted(value)),
     );

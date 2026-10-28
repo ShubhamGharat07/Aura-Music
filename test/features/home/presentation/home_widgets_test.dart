@@ -12,6 +12,8 @@ import 'package:aura_music/features/home/presentation/widgets/home_artists.dart'
 import 'package:aura_music/features/home/presentation/widgets/home_languages.dart';
 import 'package:aura_music/features/home/presentation/widgets/home_moods.dart';
 import 'package:aura_music/features/home/presentation/widgets/home_offline.dart';
+import 'package:aura_music/features/home/presentation/widgets/home_quick_picks.dart';
+import 'package:aura_music/features/player/domain/entities/track.dart';
 
 import '../../../helpers/pump_app.dart';
 
@@ -90,7 +92,7 @@ void main() {
     expect(find.text('History'), findsOneWidget);
   });
 
-  testWidgets('languages render the catalog chips and report the tapped one', (
+  testWidgets('language picker opens from Browse and reports the tapped one', (
     tester,
   ) async {
     CatalogLanguage? tapped;
@@ -104,23 +106,18 @@ void main() {
       ),
     );
 
-    expect(find.text('Languages'), findsOneWidget);
-    expect(find.text('Hindi'), findsOneWidget);
+    expect(find.text('Browse'), findsOneWidget);
     expect(find.text('Marathi'), findsOneWidget);
-    expect(
-      tester
-          .widget<GlassChip>(
-            find.ancestor(
-              of: find.text('Marathi'),
-              matching: find.byType(GlassChip),
-            ),
-          )
-          .selected,
-      isTrue,
-    );
+
+    await tester.tap(find.text('Marathi'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Language'), findsOneWidget);
+    expect(find.text('All languages'), findsOneWidget);
+    expect(find.text('Hindi'), findsOneWidget);
 
     await tester.tap(find.text('Hindi'));
-    await tester.pump();
+    await tester.pumpAndSettle();
 
     expect(tapped, hindi);
   });
@@ -185,6 +182,38 @@ void main() {
     expect(find.text('Arijit Singh'), findsOneWidget);
     expect(find.text('Shreya Ghoshal'), findsOneWidget);
     expect(find.byType(ClipOval), findsNWidgets(2));
+  });
+
+  testWidgets('top picks page between two three-column grids', (tester) async {
+    final tracks = [
+      for (var i = 0; i < 12; i++)
+        Track(id: 't$i', title: 'Pick $i', artist: 'Artist $i'),
+    ];
+    await pumpApp(
+      tester,
+      HomeQuickPicks(
+        section: TrackSection(status: SectionStatus.ready, tracks: tracks),
+        padding: 20,
+        columns: 3,
+        onRetry: () {},
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Top picks'), findsOneWidget);
+    expect(find.text('See all'), findsOneWidget);
+    for (var i = 0; i < 6; i++) {
+      expect(find.text('Pick $i'), findsOneWidget);
+    }
+    expect(find.text('Pick 6').hitTestable(), findsNothing);
+
+    await tester.drag(find.byType(PageView), const Offset(-600, 0));
+    await tester.pumpAndSettle();
+
+    for (var i = 6; i < 12; i++) {
+      expect(find.text('Pick $i').hitTestable(), findsOneWidget);
+    }
+    expect(find.text('Pick 0').hitTestable(), findsNothing);
   });
 
   testWidgets('artist row hides itself when empty and offers retry on error', (

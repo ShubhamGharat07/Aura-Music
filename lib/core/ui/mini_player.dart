@@ -42,26 +42,21 @@ final class MiniPlayer extends StatelessWidget {
         return Padding(
           padding: EdgeInsets.symmetric(horizontal: AppSpacing.lg),
           child: GlassSurface(
-            borderRadius: 18.r,
-            sigma: 28,
+            borderRadius: 20.r,
+            sigma: 24,
             tier: tier,
             child: InkWell(
               onTap: onTap,
-              borderRadius: BorderRadius.circular(18.r),
+              borderRadius: BorderRadius.circular(20.r),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Padding(
-                    padding: EdgeInsets.fromLTRB(
-                      10.w,
-                      AppSpacing.sm,
-                      6.w,
-                      AppSpacing.sm,
-                    ),
+                    padding: EdgeInsets.fromLTRB(10.w, 8.w, 3.w, 8.w),
                     child: Row(
                       children: [
                         _Art(accent: accent, artUrl: track.artUrl),
-                        SizedBox(width: AppSpacing.md),
+                        SizedBox(width: 12.w),
                         Expanded(
                           child: Column(
                             mainAxisSize: MainAxisSize.min,
@@ -72,7 +67,8 @@ final class MiniPlayer extends StatelessWidget {
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                                 style: AppTypography.subtitle.copyWith(
-                                  fontSize: 14.sp,
+                                  fontSize: 13.5.sp,
+                                  fontWeight: FontWeight.w600,
                                   color: AppColors.textPrimary,
                                 ),
                               ),
@@ -82,38 +78,48 @@ final class MiniPlayer extends StatelessWidget {
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                                 style: AppTypography.caption.copyWith(
-                                  fontSize: 12.sp,
+                                  fontSize: 13.sp,
+                                  color: AppColors.textSecondary,
                                 ),
                               ),
                             ],
                           ),
                         ),
-                        SizedBox(width: AppSpacing.xs),
                         IconButton(
                           tooltip: state.isPlaying ? 'Pause' : 'Play',
                           onPressed: () =>
                               bloc.add(const PlayerPlayPauseToggled()),
-                          icon: Container(
-                            width: 36.r,
-                            height: 36.r,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: Colors.white.withValues(alpha: 0.12),
-                            ),
+                          iconSize: 26.r,
+                          color: AppColors.textPrimary,
+                          icon: AnimatedSwitcher(
+                            duration: AppDurations.fast,
+                            switchInCurve: AppCurves.out,
+                            switchOutCurve: AppCurves.out,
+                            transitionBuilder: (child, animation) =>
+                                FadeTransition(
+                                  opacity: animation,
+                                  child: ScaleTransition(
+                                    scale: animation.drive(
+                                      Tween<double>(begin: 0.92, end: 1),
+                                    ),
+                                    child: child,
+                                  ),
+                                ),
                             child: loading
-                                ? Padding(
-                                    padding: EdgeInsets.all(9.r),
+                                ? SizedBox(
+                                    key: const ValueKey('loading'),
+                                    width: 18.r,
+                                    height: 18.r,
                                     child: CircularProgressIndicator(
-                                      strokeWidth: 2.2,
+                                      strokeWidth: 2,
                                       color: accent,
                                     ),
                                   )
                                 : Icon(
+                                    key: ValueKey(state.isPlaying),
                                     state.isPlaying
                                         ? Icons.pause_rounded
                                         : Icons.play_arrow_rounded,
-                                    size: 22.r,
-                                    color: AppColors.textPrimary,
                                   ),
                           ),
                         ),
@@ -121,11 +127,9 @@ final class MiniPlayer extends StatelessWidget {
                           tooltip: 'Next',
                           onPressed: () =>
                               bloc.add(const PlayerNextRequested()),
-                          icon: Icon(
-                            Icons.skip_next_rounded,
-                            size: 24.r,
-                            color: AppColors.textPrimary,
-                          ),
+                          iconSize: 24.r,
+                          color: AppColors.textSecondary,
+                          icon: const Icon(Icons.skip_next_rounded),
                         ),
                       ],
                     ),
@@ -146,6 +150,9 @@ final class MiniPlayer extends StatelessWidget {
 }
 
 /// Thin progress line flush along the bottom edge of the mini player (PRD O6).
+///
+/// Driven by the position notifier directly: playback progress repaints this
+/// two-pixel strip instead of rebuilding the mini player's row every tick.
 final class _ProgressLine extends StatelessWidget {
   const _ProgressLine({
     required this.position,
@@ -159,28 +166,60 @@ final class _ProgressLine extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ValueListenableBuilder<Duration>(
-      valueListenable: position,
-      builder: (context, value, _) {
-        final total = duration.inMilliseconds;
-        final progress = total <= 0
-            ? 0.0
-            : (value.inMilliseconds / total).clamp(0.0, 1.0);
-        return Padding(
-          padding: EdgeInsets.symmetric(horizontal: AppSpacing.md),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(2.r),
-            child: LinearProgressIndicator(
-              value: progress,
-              minHeight: 2,
-              backgroundColor: Colors.white.withValues(alpha: 0.10),
-              valueColor: AlwaysStoppedAnimation<Color>(accent),
+    return RepaintBoundary(
+      child: Padding(
+        padding: EdgeInsets.symmetric(horizontal: AppSpacing.md),
+        child: SizedBox(
+          height: 3,
+          width: double.infinity,
+          child: CustomPaint(
+            painter: _MiniProgressPainter(
+              position: position,
+              duration: duration,
+              accent: accent,
             ),
           ),
-        );
-      },
+        ),
+      ),
     );
   }
+}
+
+final class _MiniProgressPainter extends CustomPainter {
+  _MiniProgressPainter({
+    required this.position,
+    required this.duration,
+    required this.accent,
+  }) : super(repaint: position);
+
+  final ValueListenable<Duration> position;
+  final Duration duration;
+  final Color accent;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final total = duration.inMilliseconds;
+    final progress = total <= 0
+        ? 0.0
+        : (position.value.inMilliseconds / total).clamp(0.0, 1.0);
+    final radius = Radius.circular(size.height / 2);
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(Offset.zero & size, radius),
+      Paint()..color = Colors.white.withValues(alpha: 0.10),
+    );
+    if (progress <= 0) return;
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(
+        Rect.fromLTWH(0, 0, size.width * progress, size.height),
+        radius,
+      ),
+      Paint()..color = accent,
+    );
+  }
+
+  @override
+  bool shouldRepaint(_MiniProgressPainter oldDelegate) =>
+      oldDelegate.duration != duration || oldDelegate.accent != accent;
 }
 
 /// Small track art thumbnail (real artwork when available, subtle dark glass box otherwise).
@@ -194,23 +233,26 @@ final class _Art extends StatelessWidget {
   Widget build(BuildContext context) {
     final url = artUrl;
     return Container(
-      width: 44.r,
-      height: 44.r,
+      width: 43.r,
+      height: 43.r,
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(10.r),
-        border: Border.all(color: AppColors.glassBorder, width: 0.6),
+        borderRadius: BorderRadius.circular(12.r),
+        border: Border.all(
+          color: Colors.white.withValues(alpha: 0.10),
+          width: 0.7,
+        ),
       ),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(10.r),
+        borderRadius: BorderRadius.circular(12.r),
         child: url == null
             ? _placeholder()
             : CachedNetworkImage(
                 imageUrl: url,
-                width: 44.r,
-                height: 44.r,
+                width: 43.r,
+                height: 43.r,
                 fit: BoxFit.cover,
-                memCacheWidth: 110,
-                memCacheHeight: 110,
+                memCacheWidth: 132,
+                memCacheHeight: 132,
                 fadeInDuration: AppDurations.fast,
                 errorWidget: (context, _, _) => _placeholder(),
               ),

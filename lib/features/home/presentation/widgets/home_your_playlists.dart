@@ -49,12 +49,12 @@ final class HomeYourPlaylists extends StatelessWidget {
               ),
             ),
             SizedBox(
-              height: 220.w,
+              height: 238.w,
               child: ListView.separated(
                 scrollDirection: Axis.horizontal,
                 padding: EdgeInsets.symmetric(horizontal: padding),
                 itemCount: playlists.length,
-                separatorBuilder: (_, _) => SizedBox(width: 12.w),
+                separatorBuilder: (_, _) => SizedBox(width: 14.w),
                 itemBuilder: (_, i) {
                   final playlist = playlists[i];
                   return SizedBox(

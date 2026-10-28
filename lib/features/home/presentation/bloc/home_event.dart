@@ -27,6 +27,12 @@ final class HomeRefreshed extends HomeEvent {
   const HomeRefreshed();
 }
 
+/// Loads only the trending chart for the Top picks page.
+final class HomeTopPicksStarted extends HomeEvent {
+  /// Creates the top-picks event.
+  const HomeTopPicksStarted();
+}
+
 /// New play-history snapshot arrived (drives "Continue listening").
 final class HomeHistoryChanged extends HomeEvent {
   /// Creates the history-changed event.

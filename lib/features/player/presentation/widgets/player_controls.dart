@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
+import 'package:aura_music/core/theme/colors.dart';
+import 'package:aura_music/core/theme/tokens.dart';
 import 'package:aura_music/core/ui/aura_loader.dart';
 import 'package:aura_music/features/player/domain/entities/playback_status.dart'
     as pb;
 
-// Transport controls cluster (F04). Play/pause is the hero control with a
-// soft glow; shuffle/repeat toggle to the accent when active.
+// Transport controls cluster (F04). Play/pause is the one filled control;
+// shuffle/repeat toggle to the accent when active.
 
 /// Shuffle · previous · play/pause · next · repeat row.
 final class PlayerControls extends StatelessWidget {
@@ -71,16 +74,21 @@ final class PlayerControls extends StatelessWidget {
         IconButton(
           tooltip: 'Previous',
           onPressed: onPrevious,
-          iconSize: 40.r,
-          color: Colors.white,
+          iconSize: 35.r,
+          color: AppColors.textPrimary,
           icon: const Icon(Icons.skip_previous_rounded),
         ),
-        _heroButton(playing, loading),
+        _HeroButton(
+          accent: accent,
+          playing: playing,
+          loading: loading,
+          onPressed: onPlayPause,
+        ),
         IconButton(
           tooltip: 'Next',
           onPressed: onNext,
-          iconSize: 40.r,
-          color: Colors.white,
+          iconSize: 35.r,
+          color: AppColors.textPrimary,
           icon: const Icon(Icons.skip_next_rounded),
         ),
         _toggle(
@@ -108,45 +116,77 @@ final class PlayerControls extends StatelessWidget {
     return IconButton(
       tooltip: tooltip,
       onPressed: onPressed,
+      iconSize: 22.r,
       icon: Icon(icon),
-      color: active ? accent : Colors.white70,
+      color: active ? accent : AppColors.textSecondary,
     );
   }
+}
 
-  Widget _heroButton(bool playing, bool loading) {
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        boxShadow: [
-          BoxShadow(
-            color: accent.withValues(alpha: 0.45),
-            blurRadius: 24,
-            spreadRadius: 2,
-          ),
-        ],
-      ),
+/// Hero play/pause button with a tactile press cue and a crossfaded icon.
+final class _HeroButton extends HookWidget {
+  const _HeroButton({
+    required this.accent,
+    required this.playing,
+    required this.loading,
+    this.onPressed,
+  });
+
+  final Color accent;
+  final bool playing;
+  final bool loading;
+  final VoidCallback? onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final pressed = useState(false);
+    final reduceMotion =
+        MediaQuery.maybeOf(context)?.disableAnimations ?? false;
+    return AnimatedScale(
+      scale: pressed.value && !reduceMotion ? 0.94 : 1,
+      duration: AppDurations.fast,
+      curve: AppCurves.out,
       child: Material(
         color: accent,
-        shape: CircleBorder(),
+        shape: const CircleBorder(),
         child: Semantics(
           button: true,
           label: playing ? 'Pause' : 'Play',
           child: InkWell(
-            customBorder: CircleBorder(),
+            customBorder: const CircleBorder(),
             // Stay tappable while buffering so a stall can always be paused.
-            onTap: onPlayPause,
+            onTap: onPressed,
+            onTapDown: (_) => pressed.value = true,
+            onTapUp: (_) => pressed.value = false,
+            onTapCancel: () => pressed.value = false,
             child: SizedBox(
-              width: 72.w,
-              height: 72.w,
-              child: loading
-                  ? Center(
-                      child: AuraLoader(size: 34.r, color: Colors.black),
-                    )
-                  : Icon(
-                      playing ? Icons.pause_rounded : Icons.play_arrow_rounded,
-                      size: 40.r,
-                      color: Colors.black,
-                    ),
+              width: 60.w,
+              height: 60.w,
+              child: AnimatedSwitcher(
+                duration: AppDurations.fast,
+                switchInCurve: AppCurves.out,
+                switchOutCurve: AppCurves.out,
+                transitionBuilder: (child, animation) => FadeTransition(
+                  opacity: animation,
+                  child: ScaleTransition(
+                    scale: animation.drive(Tween<double>(begin: 0.92, end: 1)),
+                    child: child,
+                  ),
+                ),
+                child: loading
+                    ? Center(
+                        key: const ValueKey('loading'),
+                        child: AuraLoader(size: 31.r, color: Colors.black),
+                      )
+                    : Icon(
+                        key: ValueKey(playing),
+                        playing
+                            ? Icons.pause_rounded
+                            : Icons.play_arrow_rounded,
+                        size: 32.r,
+                        color: Colors.black,
+                      ),
+              ),
             ),
           ),
         ),
