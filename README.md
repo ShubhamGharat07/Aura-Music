@@ -24,7 +24,7 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/ShubhamGharat07/Aura-Music/releases">
+  <a href="https://github.com/ShubhamGharat07/Aura-Music/releases/latest/download/app-release.apk">
     View Previous Versions
   </a>
 </p>
