@@ -1,3 +1,4 @@
+ 
 <p align="center">
   <img src="assets/icons/Auramusiclogo.png" width="160" alt="Aura Music logo" />
 </p>
@@ -17,24 +18,24 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/ShubhamGharat07/Aura-Music/releases">
-    <img src="https://img.shields.io/badge/Download_APK-Releases-1DB954?style=for-the-badge&logo=android&logoColor=white" alt="Download APK from GitHub Releases" />
+  <a href="https://github.com/ShubhamGharat07/Aura-Music/releases/latest/download/Aura-Music.apk">
+    <img src="https://img.shields.io/badge/Download_Latest_APK-1DB954?style=for-the-badge&logo=android&logoColor=white" alt="Download Latest Aura Music APK" />
   </a>
 </p>
 
-> **APK status:** no APK has been published yet. The button above opens the
-> [Releases page](https://github.com/ShubhamGharat07/Aura-Music/releases), where
-> the first signed build will appear. You can also [build it locally](#build-apk).
+<p align="center">
+  <a href="https://github.com/ShubhamGharat07/Aura-Music/releases">
+    View Previous Versions
+  </a>
+</p>
 
-Aura Music is an independent Flutter music player for Android. It browses an
-unofficial JioSaavn-based catalog, plays audio in the background, keeps a local
-library and playlists, downloads music for offline listening, shows lyrics, and
-adapts its glass-styled interface from phone to tablet layouts.
+> **Download:** Click the Download Latest APK button to download the latest Android version directly. Previous versions remain available in the GitHub Releases archive. Every release must include the APK asset named `Aura-Music.apk`.
 
-It does not require an account and does not include an analytics or
-crash-reporting SDK. Library data lives on the device in an encrypted database.
-Aura Music is **not affiliated with JioSaavn, Spotify, Apple Music, YouTube, or
-any other streaming provider**; see the [disclaimer](DISCLAIMER.md).
+Aura Music is an independent Flutter music player for Android. It browses an unofficial JioSaavn-based catalog, plays audio in the background, keeps a local library and playlists, downloads music for offline listening, shows lyrics, and adapts its glass-styled interface from phone to tablet layouts.
+
+It does not require an account and does not include an analytics or crash-reporting SDK. Library data lives on the device in an encrypted database.
+
+Aura Music is **not affiliated with JioSaavn, Spotify, Apple Music, YouTube, or any other streaming provider**; see the [disclaimer](DISCLAIMER.md).
 
 ## At a glance
 
@@ -64,10 +65,9 @@ any other streaming provider**; see the [disclaimer](DISCLAIMER.md).
 
 ## Screenshots
 
-Actual app screenshots are **not checked in yet**. The
-[`docs/screenshots/`](docs/screenshots/README.md) folder is prepared for them,
-with capture and naming instructions. Once screenshots are added, this section
-will show the Home, Search, Player, Library, Downloads, and Settings screens.
+Actual app screenshots are **not checked in yet**. The [`docs/screenshots/`](docs/screenshots/README.md) folder is prepared for them, with capture and naming instructions.
+
+Once screenshots are added, this section will show the Home, Search, Player, Library, Downloads, and Settings screens.
 
 ## Tech stack
 
@@ -99,16 +99,16 @@ lib/
 
 assets/
   icons/                 # Aura Music logo and adaptive foreground
+
 docs/
   screenshots/           # README screenshot drop zone and guide
+
 scripts/                 # local code-rule and tracker checks
 test/                    # unit and widget tests
 integration_test/        # integration test scaffold
 ```
 
-Each feature follows the same broad shape where applicable:
-`data/` for providers and repositories, `domain/` for entities and use cases,
-and `presentation/` for BLoC/Cubit state and widgets.
+Each feature follows the same broad shape where applicable: `data/` for providers and repositories, `domain/` for entities and use cases, and `presentation/` for BLoC/Cubit state and widgets.
 
 ## Getting started
 
@@ -148,16 +148,31 @@ The APK is written to:
 build/app/outputs/flutter-apk/
 ```
 
-> **Before distributing a build:** configure a real release keystore and
-> replace the placeholder application ID `com.example.aura_music`. The current
-> `release` build type still uses the debug signing configuration.
+> **Before distributing a build:** configure a real release keystore and replace the placeholder application ID `com.example.aura_music`. The current `release` build type still uses the debug signing configuration.
+
+## GitHub Releases & Downloads
+
+Aura Music uses GitHub Releases to distribute Android APK builds.
+
+- **Latest APK:** [Download Aura Music](https://github.com/ShubhamGharat07/Aura-Music/releases/latest/download/Aura-Music.apk)
+- **Previous versions:** [Browse all GitHub Releases](https://github.com/ShubhamGharat07/Aura-Music/releases)
+
+### Publishing a new version
+
+1. Build the latest APK using Flutter.
+2. Rename the generated APK to `Aura-Music.apk`.
+3. Create a new GitHub Release with an appropriate version tag, such as `v2.0.0`.
+4. Upload `Aura-Music.apk` as a release asset.
+5. Publish the release and make sure it is marked as the latest release.
+
+**Important:** Keep the APK filename exactly `Aura-Music.apk` for every release. This allows the latest download link to automatically point to the newest published APK. Older releases and their APK files remain available in the release history.
 
 ## Roadmap
 
 These are future improvements, not shipped features:
 
-- [ ] Publish the first signed APK through GitHub Releases
-- [ ] Configure release signing and replace placeholder app/package IDs
+- [ ] Keep GitHub Releases updated with new APK versions
+- [ ] Configure proper release signing and replace placeholder app/package IDs
 - [ ] Stabilize download pause, resume, and retry
 - [ ] Add equalizer / DSP controls
 - [ ] Add backup and restore
@@ -170,28 +185,21 @@ These are future improvements, not shipped features:
 <details>
 <summary><strong>Known limitations</strong></summary>
 
-- No APK release has been published yet.
-- Release builds use debug signing, and the application ID is still
-  `com.example.aura_music`.
+- Release builds currently use debug signing, and the application ID is still `com.example.aura_music`.
 - Download pause/resume/retry is not reliable yet.
-- Party mode is experimental and hardware-dependent; it syncs a queue over BLE
-  but does not stream audio.
-- The iOS runner is present but unverified and missing some production
-  configuration.
+- Party mode is experimental and hardware-dependent; it syncs a queue over BLE but does not stream audio.
+- The iOS runner is present but unverified and missing some production configuration.
 - Localization is partial.
 - Some widget tests are still being stabilized; `flutter analyze` is clean.
-- The catalog uses an unofficial third-party source and can break if that
-  source changes.
+- The catalog uses an unofficial third-party source and can break if that source changes.
 
 </details>
 
 ## Contributing
 
 1. Fork the repository and create a focused branch.
-2. Keep the existing architecture: feature-first `data` / `domain` /
-   `presentation`, BLoC/Cubit or `flutter_hooks`, and `go_router` navigation.
-3. Do not add analytics/tracker SDKs or commit signing keys, keystores, or
-   other secrets.
+2. Keep the existing architecture: feature-first `data` / `domain` / `presentation`, BLoC/Cubit or `flutter_hooks`, and `go_router` navigation.
+3. Do not add analytics/tracker SDKs or commit signing keys, keystores, or other secrets.
 4. Run the local checks before opening a pull request:
 
 ```bash
@@ -201,17 +209,13 @@ bash scripts/check_code_rules.sh
 bash scripts/check_no_trackers.sh
 ```
 
-5. Open a pull request describing the problem, the change, and any verification
-   you ran. Keep unrelated refactors out of the same PR.
+5. Open a pull request describing the problem, the change, and any verification you ran. Keep unrelated refactors out of the same PR.
 
 ## Privacy and disclaimer
 
-Aura Music is an unofficial project and is not affiliated with any streaming
-service or rights holder. You are responsible for having the appropriate rights
-to the media you access. The app contacts third-party catalog, artwork, stream,
-and lyrics providers to function, and those services may change or become
-unavailable. Read the full [DISCLAIMER.md](DISCLAIMER.md) before using or
-redistributing the project.
+Aura Music is an unofficial project and is not affiliated with any streaming service or rights holder. You are responsible for having the appropriate rights to the media you access.
+
+The app contacts third-party catalog, artwork, stream, and lyrics providers to function, and those services may change or become unavailable. Read the full [DISCLAIMER.md](DISCLAIMER.md) before using or redistributing the project.
 
 ## License
 
@@ -222,7 +226,8 @@ Released under the [MIT License](LICENSE).
 | Resource | Link |
 |---|---|
 | Repository | [ShubhamGharat07/Aura-Music](https://github.com/ShubhamGharat07/Aura-Music) |
-| Releases / APK | [GitHub Releases](https://github.com/ShubhamGharat07/Aura-Music/releases) |
+| Latest APK | [Download Latest Version](https://github.com/ShubhamGharat07/Aura-Music/releases/latest/download/Aura-Music.apk) |
+| Previous Versions | [GitHub Releases](https://github.com/ShubhamGharat07/Aura-Music/releases) |
 | Issues | [GitHub Issues](https://github.com/ShubhamGharat07/Aura-Music/issues) |
 | Screenshot guide | [docs/screenshots](docs/screenshots/README.md) |
 | Disclaimer | [DISCLAIMER.md](DISCLAIMER.md) |
