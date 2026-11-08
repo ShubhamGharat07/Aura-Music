@@ -1,5 +1,4 @@
- 
-<p align="center">
+ <p align="center">
   <img src="assets/icons/Auramusiclogo.png" width="160" alt="Aura Music logo" />
 </p>
 
@@ -18,18 +17,16 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/ShubhamGharat07/Aura-Music/releases/latest/download/Aura-Music.apk">
+  <a href="https://github.com/ShubhamGharat07/Aura-Music/releases/latest/download/app-release.apk">
     <img src="https://img.shields.io/badge/Download_Latest_APK-1DB954?style=for-the-badge&logo=android&logoColor=white" alt="Download Latest Aura Music APK" />
   </a>
 </p>
 
 <p align="center">
-  <a href="https://github.com/ShubhamGharat07/Aura-Music/releases/latest/download/app-release.apk">
+  <a href="https://github.com/ShubhamGharat07/Aura-Music/releases">
     View Previous Versions
   </a>
 </p>
-
-> **Download:** Click the Download Latest APK button to download the latest Android version directly. Previous versions remain available in the GitHub Releases archive. Every release must include the APK asset named `Aura-Music.apk`.
 
 Aura Music is an independent Flutter music player for Android. It browses an unofficial JioSaavn-based catalog, plays audio in the background, keeps a local library and playlists, downloads music for offline listening, shows lyrics, and adapts its glass-styled interface from phone to tablet layouts.
 
@@ -42,7 +39,7 @@ Aura Music is **not affiliated with JioSaavn, Spotify, Apple Music, YouTube, or 
 | | |
 |---|---|
 | **Platform** | Android (primary); iOS runner exists but is not production-ready |
-| **Version** | `1.0.0+1` |
+| **Latest GitHub Release** | `v2.0.0` |
 | **Architecture** | Feature-first Clean Architecture + BLoC/Cubit |
 | **Catalog** | Unofficial JioSaavn-based source |
 | **Local storage** | Drift + SQLite3 Multiple Ciphers (SQLCipher 4) |
@@ -148,24 +145,34 @@ The APK is written to:
 build/app/outputs/flutter-apk/
 ```
 
+The universal release APK is normally generated as:
+
+```text
+app-release.apk
+```
+
 > **Before distributing a build:** configure a real release keystore and replace the placeholder application ID `com.example.aura_music`. The current `release` build type still uses the debug signing configuration.
 
 ## GitHub Releases & Downloads
 
 Aura Music uses GitHub Releases to distribute Android APK builds.
 
-- **Latest APK:** [Download Aura Music](https://github.com/ShubhamGharat07/Aura-Music/releases/latest/download/Aura-Music.apk)
-- **Previous versions:** [Browse all GitHub Releases](https://github.com/ShubhamGharat07/Aura-Music/releases)
+- **Download Latest APK:** [Download Aura Music](https://github.com/ShubhamGharat07/Aura-Music/releases/latest/download/app-release.apk)
+- **Previous Versions:** [Browse all GitHub Releases](https://github.com/ShubhamGharat07/Aura-Music/releases)
+- **Latest Release:** [Aura Music v2.0.0](https://github.com/ShubhamGharat07/Aura-Music/releases/latest)
 
 ### Publishing a new version
 
-1. Build the latest APK using Flutter.
-2. Rename the generated APK to `Aura-Music.apk`.
-3. Create a new GitHub Release with an appropriate version tag, such as `v2.0.0`.
-4. Upload `Aura-Music.apk` as a release asset.
-5. Publish the release and make sure it is marked as the latest release.
+1. Build the universal APK using Flutter.
+2. Locate the generated `app-release.apk` file.
+3. Create a new GitHub Release with an appropriate version tag, such as `v2.1.0`.
+4. Upload the APK to the release assets.
+5. Keep the uploaded APK filename exactly `app-release.apk`.
+6. Publish the release and make sure it is marked as the latest release.
 
-**Important:** Keep the APK filename exactly `Aura-Music.apk` for every release. This allows the latest download link to automatically point to the newest published APK. Older releases and their APK files remain available in the release history.
+**Important:** The direct download button depends on the exact asset filename `app-release.apk`. Keep this filename consistent across releases so the same download URL automatically points to the latest published APK.
+
+Previous releases and their APK files remain available in the GitHub Releases archive. Do not delete older releases when publishing a new version.
 
 ## Roadmap
 
@@ -226,7 +233,7 @@ Released under the [MIT License](LICENSE).
 | Resource | Link |
 |---|---|
 | Repository | [ShubhamGharat07/Aura-Music](https://github.com/ShubhamGharat07/Aura-Music) |
-| Latest APK | [Download Latest Version](https://github.com/ShubhamGharat07/Aura-Music/releases/latest/download/Aura-Music.apk) |
+| Latest APK | [Download Latest Version](https://github.com/ShubhamGharat07/Aura-Music/releases/latest/download/app-release.apk) |
 | Previous Versions | [GitHub Releases](https://github.com/ShubhamGharat07/Aura-Music/releases) |
 | Issues | [GitHub Issues](https://github.com/ShubhamGharat07/Aura-Music/issues) |
 | Screenshot guide | [docs/screenshots](docs/screenshots/README.md) |
