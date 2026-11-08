@@ -105,23 +105,34 @@ final class _SearchField extends HookWidget {
   @override
   Widget build(BuildContext context) {
     useListenable(controller);
+    final focusNode = useFocusNode();
+    useListenable(focusNode);
+    final bloc = context.read<SearchBloc>();
     final query = useDebouncedValue(
       controller.text,
       AppConstants.searchDebounce,
     );
     useEffect(() {
-      context.read<SearchBloc>().add(SearchQueryChanged(query));
+      bloc.add(SearchQueryChanged(query));
       return null;
-    }, [query]);
+    }, [query, bloc]);
+    final focused = focusNode.hasFocus;
     return SearchBar(
       controller: controller,
+      focusNode: focusNode,
+      textInputAction: TextInputAction.search,
       hintText: 'Songs, albums, artists',
       elevation: const WidgetStatePropertyAll(0),
       backgroundColor: WidgetStatePropertyAll(
-        AppColors.bgElevated.withValues(alpha: 0.62),
+        AppColors.bgElevated.withValues(alpha: focused ? 0.9 : 0.62),
       ),
-      side: const WidgetStatePropertyAll(
-        BorderSide(color: AppColors.glassBorder, width: 0.7),
+      side: WidgetStatePropertyAll(
+        BorderSide(
+          color: focused
+              ? AppColors.textPrimary.withValues(alpha: 0.18)
+              : AppColors.glassBorder,
+          width: 0.7,
+        ),
       ),
       shape: WidgetStatePropertyAll(
         RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.r)),
@@ -142,8 +153,28 @@ final class _SearchField extends HookWidget {
         size: 22.r,
         color: AppColors.textSecondary,
       ),
-      onSubmitted: (value) =>
-          context.read<SearchBloc>().add(SearchSubmitted(value)),
+      trailing: controller.text.isEmpty
+          ? null
+          : [
+              IconButton(
+                tooltip: 'Clear search',
+                onPressed: () {
+                  controller.clear();
+                  bloc.add(const SearchQueryChanged(''));
+                  focusNode.requestFocus();
+                },
+                icon: Icon(
+                  Icons.close_rounded,
+                  size: 18.r,
+                  color: AppColors.textSecondary,
+                ),
+              ),
+            ],
+      onTapOutside: (_) => focusNode.unfocus(),
+      onSubmitted: (value) {
+        focusNode.unfocus();
+        bloc.add(SearchSubmitted(value));
+      },
     );
   }
 }
@@ -154,7 +185,12 @@ final class _Body extends StatelessWidget {
   final TextEditingController controller;
 
   void _submit(BuildContext context, String term) {
-    controller.text = term;
+    // Keep the caret at the end; assigning `.text` leaves it unset, so the
+    // next typed character would land at the start of the query.
+    controller.value = TextEditingValue(
+      text: term,
+      selection: TextSelection.collapsed(offset: term.length),
+    );
     context.read<SearchBloc>().add(SearchSubmitted(term));
   }
 

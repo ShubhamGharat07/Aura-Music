@@ -92,6 +92,15 @@ final class SearchBloc extends Bloc<SearchEvent, SearchState> {
       );
       return;
     }
+    // Typing then submitting fires both events: the debounced echo lands after
+    // (or during) the submit and used to flip results back to suggestions,
+    // forcing a second search. An echo of the query already submitted is a
+    // no-op; only genuinely new text switches back to type-ahead.
+    if (trimmed == state.query &&
+        state.status != SearchStatus.suggesting &&
+        state.status != SearchStatus.idle) {
+      return;
+    }
     final token = ++_token;
     emit(
       state.copyWith(

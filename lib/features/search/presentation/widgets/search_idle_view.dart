@@ -1,10 +1,10 @@
 ﻿import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
+import 'package:aura_music/core/theme/colors.dart';
 import 'package:aura_music/core/theme/tokens.dart';
 import 'package:aura_music/core/theme/typography.dart';
 import 'package:aura_music/core/ui/app_spinner.dart';
-import 'package:aura_music/core/ui/glass_chip.dart';
 import 'package:aura_music/core/ui/section_header.dart';
 import 'package:aura_music/core/ui/state_view.dart';
 import 'package:aura_music/features/player/domain/entities/track.dart';
@@ -112,6 +112,7 @@ final class SearchIdleView extends StatelessWidget {
   };
 
   Widget _recent() {
+    final terms = recent.take(6).toList(growable: false);
     return Padding(
       padding: EdgeInsets.only(bottom: 8.w),
       child: Column(
@@ -119,25 +120,97 @@ final class SearchIdleView extends StatelessWidget {
         children: [
           Row(
             children: [
-              Expanded(child: Text('Recent', style: AppTypography.title)),
-              TextButton(onPressed: onClearRecent, child: const Text('Clear')),
-            ],
-          ),
-          Wrap(
-            spacing: 8.w,
-            runSpacing: 8.w,
-            children: [
-              for (final term in recent)
-                GlassChip(
-                  label: term,
-                  icon: Icons.history,
-                  onTap: () => onTermTap(term),
-                  onRemove: () => onRemoveTerm(term),
+              Expanded(
+                child: Text('Recent searches', style: AppTypography.title),
+              ),
+              TextButton(
+                onPressed: onClearRecent,
+                style: TextButton.styleFrom(
+                  foregroundColor: AppColors.textSecondary,
+                  padding: EdgeInsets.symmetric(horizontal: 8.w),
+                  minimumSize: Size(0, 36.w),
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  textStyle: AppTypography.caption.copyWith(
+                    fontSize: 13.sp,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
+                child: const Text('Clear'),
+              ),
             ],
           ),
-          SizedBox(height: 8.w),
+          SizedBox(height: 2.w),
+          for (final term in terms)
+            _RecentRow(
+              term: term,
+              onTap: () => onTermTap(term),
+              onRemove: () => onRemoveTerm(term),
+            ),
+          SizedBox(height: 4.w),
         ],
+      ),
+    );
+  }
+}
+
+// One recent term: history glyph, single-line label that ellipsizes inside the
+// row, and a remove action pinned to the trailing edge so long terms can never
+// push the × off-screen.
+final class _RecentRow extends StatelessWidget {
+  const _RecentRow({
+    required this.term,
+    required this.onTap,
+    required this.onRemove,
+  });
+
+  final String term;
+  final VoidCallback onTap;
+  final VoidCallback onRemove;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12.r),
+        child: Padding(
+          padding: EdgeInsets.symmetric(horizontal: 2.w),
+          child: Row(
+            children: [
+              Icon(
+                Icons.history_rounded,
+                size: 18.r,
+                color: AppColors.textTertiary,
+              ),
+              SizedBox(width: 12.w),
+              Expanded(
+                child: Text(
+                  term,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTypography.body.copyWith(
+                    fontSize: 15.sp,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              ),
+              SizedBox(width: 8.w),
+              InkResponse(
+                onTap: onRemove,
+                radius: 20.r,
+                child: Padding(
+                  padding: EdgeInsets.all(10.w),
+                  child: Icon(
+                    Icons.close_rounded,
+                    size: 16.r,
+                    color: AppColors.textTertiary,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

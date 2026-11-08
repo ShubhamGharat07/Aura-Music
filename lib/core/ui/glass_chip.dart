@@ -75,14 +75,18 @@ final class GlassChip extends StatelessWidget {
                 ),
                 SizedBox(width: 6.w),
               ],
-              Text(
-                label,
-                style: AppTypography.body.copyWith(
-                  fontSize: 14.5.sp,
-                  fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
-                  color: selected
-                      ? AppColors.textPrimary
-                      : AppColors.textSecondary,
+              Flexible(
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTypography.body.copyWith(
+                    fontSize: 14.5.sp,
+                    fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
+                    color: selected
+                        ? AppColors.textPrimary
+                        : AppColors.textSecondary,
+                  ),
                 ),
               ),
               if (onRemove != null) ...[

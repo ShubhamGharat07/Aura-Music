@@ -77,11 +77,40 @@ void main() {
       ),
     );
 
-    expect(find.text('Recent'), findsOneWidget);
+    expect(find.text('Recent searches'), findsOneWidget);
     expect(find.text('neon'), findsOneWidget);
     expect(find.text('Suggestions'), findsOneWidget);
     expect(find.text('Babydoll'), findsOneWidget);
     expect(find.text('#1  833k plays'), findsOneWidget);
+  });
+
+  testWidgets('long recent terms ellipsize and keep the remove action', (
+    tester,
+  ) async {
+    const longTerm =
+        'Dhurandhar The Revenge - Aari Aari (From "Dhurandhar") '
+        'Deluxe Edition Remastered';
+
+    await pumpApp(
+      tester,
+      host(
+        SearchIdleView(
+          recent: const <String>[longTerm],
+          onTermTap: (_) {},
+          onClearRecent: () {},
+          onRemoveTerm: (_) {},
+          browse: const <Track>[],
+          browseStatus: BrowseStatus.ready,
+          browseError: null,
+          onPlay: (_, _) {},
+          onRetry: () {},
+        ),
+      ),
+    );
+
+    expect(tester.takeException(), isNull);
+    expect(find.text(longTerm), findsOneWidget);
+    expect(find.byIcon(Icons.close_rounded).hitTestable(), findsOneWidget);
   });
 
   testWidgets('idle view shows a spinner while suggestions load', (

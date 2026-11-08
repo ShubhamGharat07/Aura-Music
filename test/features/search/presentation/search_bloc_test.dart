@@ -1,4 +1,6 @@
-﻿import 'package:flutter_test/flutter_test.dart';
+﻿import 'dart:async';
+
+import 'package:flutter_test/flutter_test.dart';
 import 'package:fpdart/fpdart.dart';
 import 'package:mocktail/mocktail.dart';
 
@@ -92,6 +94,65 @@ void main() {
     );
     expect(bloc.state.results.songs, <Track>[track]);
     verify(() => historyRepository.add('neon')).called(1);
+  });
+
+  test('a debounced echo of the submitted query keeps results', () async {
+    when(() => searchRepository.search(any())).thenAnswer(
+      (_) async => const Right(SearchResults(songs: <Track>[track])),
+    );
+
+    bloc.add(const SearchSubmitted('neon'));
+    await pumpEventQueue();
+    expect(bloc.state.status, SearchStatus.ready);
+
+    bloc.add(const SearchQueryChanged('neon'));
+    await pumpEventQueue();
+
+    expect(bloc.state.status, SearchStatus.ready);
+    expect(bloc.state.results.songs, <Track>[track]);
+    verifyNever(
+      () => searchRepository.suggestions(any(), limit: any(named: 'limit')),
+    );
+  });
+
+  test('an echo while the submit is in flight does not cancel it', () async {
+    final response = Completer<Either<Failure, SearchResults>>();
+    when(
+      () => searchRepository.search(any()),
+    ).thenAnswer((_) => response.future);
+
+    bloc.add(const SearchSubmitted('neon'));
+    await pumpEventQueue();
+    expect(bloc.state.status, SearchStatus.loading);
+
+    bloc.add(const SearchQueryChanged('neon'));
+    await pumpEventQueue();
+    expect(bloc.state.status, SearchStatus.loading);
+
+    response.complete(const Right(SearchResults(songs: <Track>[track])));
+    await pumpEventQueue();
+
+    expect(bloc.state.status, SearchStatus.ready);
+    expect(bloc.state.results.songs, <Track>[track]);
+  });
+
+  test('a different query after submit returns to suggestions', () async {
+    when(() => searchRepository.search(any())).thenAnswer(
+      (_) async => const Right(SearchResults(songs: <Track>[track])),
+    );
+    when(
+      () => searchRepository.suggestions(any(), limit: any(named: 'limit')),
+    ).thenAnswer((_) async => const Right(<Track>[track]));
+
+    bloc.add(const SearchSubmitted('neon'));
+    await pumpEventQueue();
+    expect(bloc.state.status, SearchStatus.ready);
+
+    bloc.add(const SearchQueryChanged('neonx'));
+    await pumpEventQueue();
+
+    expect(bloc.state.status, SearchStatus.suggesting);
+    expect(bloc.state.query, 'neonx');
   });
 
   test('a failing submit emits error', () async {
