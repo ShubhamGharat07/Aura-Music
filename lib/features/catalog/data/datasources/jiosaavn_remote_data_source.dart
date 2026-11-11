@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 
+import 'package:aura_music/core/error/error_messages.dart';
 import 'package:aura_music/core/error/exceptions.dart';
 import 'package:aura_music/core/utils/ttl_cache.dart';
 import 'package:aura_music/features/catalog/data/mappers/jiosaavn_mapper.dart';
@@ -349,20 +350,21 @@ final class JiosaavnRemoteDataSource {
   AppException _mapError(DioException error) {
     switch (error.type) {
       case DioExceptionType.connectionError:
+      case DioExceptionType.unknown:
+        return const NetworkException(ErrorMessages.offline);
       case DioExceptionType.connectionTimeout:
       case DioExceptionType.sendTimeout:
       case DioExceptionType.receiveTimeout:
-      case DioExceptionType.unknown:
-        return NetworkException(error.message ?? 'Network unavailable');
+        return const NetworkException(ErrorMessages.timeout);
       case DioExceptionType.badResponse:
       case DioExceptionType.transformTimeout:
         return ServerException(
-          error.message ?? 'Server error',
+          ErrorMessages.server,
           statusCode: error.response?.statusCode,
         );
       case DioExceptionType.cancel:
       case DioExceptionType.badCertificate:
-        return ServerException(error.message ?? 'Request failed');
+        return const ServerException(ErrorMessages.generic);
     }
   }
 }

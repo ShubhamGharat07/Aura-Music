@@ -102,7 +102,7 @@ void main() {
     expect(adapter.requests.single.queryParameters['pids'], 'abc');
   });
 
-  test('requests 160 kbps when 320 is unavailable', () async {
+  test('always requests the highest rendition (320 kbps)', () async {
     final adapter = FakeHttpAdapter(
       (_) async => jsonResponse({
         'songs': [
@@ -123,7 +123,7 @@ void main() {
       adapter,
     ).resolve(const Track(id: 'jiosaavn:abc', title: 'T', artist: 'A'));
 
-    expect(url, 'https://aac.saavncdn.com/9/song_160.mp4');
+    expect(url, 'https://aac.saavncdn.com/9/song_320.mp4');
   });
 
   test('returns null when the song has no media URL', () async {

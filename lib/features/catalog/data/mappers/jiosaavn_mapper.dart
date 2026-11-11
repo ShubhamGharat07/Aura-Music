@@ -109,11 +109,13 @@ final class JiosaavnMapper {
     bio: model.bio,
   );
 
-  /// Expands a song's `more_info` block to a 320 (or 160) kbps stream URL.
-  String? streamUrl(JiosaavnSongModel model) => _streamUrl(
-    model.info.encryptedMediaUrl,
-    prefer320: model.info.prefers320,
-  );
+  /// Expands a song's `more_info` block to its highest (320 kbps) stream URL.
+  ///
+  /// JioSaavn's `320kbps` metadata flag is unreliable, so the highest
+  /// rendition is always requested. The player downgrades to 160/96 kbps only
+  /// when the CDN rejects the 320 kbps file.
+  String? streamUrl(JiosaavnSongModel model) =>
+      _streamUrl(model.info.encryptedMediaUrl);
 
   /// Upgrades `http` → `https` and 150 px → 500 px artwork.
   String? artwork(String? link) {
@@ -142,14 +144,13 @@ final class JiosaavnMapper {
     return value.isEmpty ? 'Unknown artist' : value;
   }
 
-  String? _streamUrl(String? encrypted, {bool prefer320 = true}) {
+  String? _streamUrl(String? encrypted) {
     if (encrypted == null || encrypted.isEmpty) return null;
     final decrypted = DesEcb.decryptBase64ToString(encrypted, _desKey);
     if (decrypted.isEmpty) return null;
-    final quality = prefer320 ? '320' : '160';
     return decrypted
         .replaceFirst('http://', 'https://')
-        .replaceFirst(_qualitySuffix, '_$quality.');
+        .replaceFirst(_qualitySuffix, '_320.');
   }
 
   String _text(String? value) {

@@ -120,9 +120,12 @@ final class JustAudioPlaybackController implements PlaybackController {
         if (url == null || url.isEmpty) {
           throw StateError('Track ${track.id} has no stream URL');
         }
-        await _player
-            .setUrl(url, initialPosition: startAt, tag: track.id)
-            .timeout(_loadTimeout);
+        await _setNetworkSource(
+          url,
+          startAt: startAt,
+          tag: track.id,
+          generation: generation,
+        );
         if (generation != _loadGeneration) return;
         _hasSource = true;
       }
@@ -194,6 +197,46 @@ final class JustAudioPlaybackController implements PlaybackController {
     await _player.dispose();
     _position.dispose();
     _buffered.dispose();
+  }
+
+  /// Loads a network source, stepping down the bitrate when the CDN rejects a
+  /// rendition (320 → 160 → 96 kbps) instead of failing the whole track.
+  Future<void> _setNetworkSource(
+    String url, {
+    required Duration startAt,
+    required String tag,
+    required int generation,
+  }) async {
+    var candidate = url;
+    while (true) {
+      try {
+        await _player
+            .setUrl(candidate, initialPosition: startAt, tag: tag)
+            .timeout(_loadTimeout);
+        return;
+      } on TimeoutException {
+        // A dead connection is not a missing rendition: retrying lower
+        // bitrates would only multiply the wait.
+        rethrow;
+      } on Object {
+        if (generation != _loadGeneration) rethrow;
+        final lower = lowerQualityUrl(candidate);
+        if (lower == null) rethrow;
+        candidate = lower;
+      }
+    }
+  }
+
+  /// Next-lower JioSaavn rendition URL, or null when no step remains.
+  ///
+  /// JioSaavn serves the same file at `_320`, `_160` and `_96` kbps; older
+  /// uploads can be missing the higher renditions.
+  @visibleForTesting
+  static String? lowerQualityUrl(String url) {
+    for (final (from, to) in const [('_320.', '_160.'), ('_160.', '_96.')]) {
+      if (url.contains(from)) return url.replaceFirst(from, to);
+    }
+    return null;
   }
 
   /// Starts playback without blocking the event loop, surfacing engine errors

@@ -1,8 +1,10 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
+import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:aura_music/core/error/error_messages.dart';
 import 'package:aura_music/core/error/exceptions.dart';
 import 'package:aura_music/core/utils/des_ecb.dart';
 import 'package:aura_music/features/catalog/data/datasources/jiosaavn_remote_data_source.dart';
@@ -138,11 +140,38 @@ void main() {
     );
   });
 
-  test('maps a transport failure to NetworkException', () async {
+  test('maps a transport failure to a friendly NetworkException', () async {
     final adapter = FakeHttpAdapter((_) async => throw Exception('socket'));
     await expectLater(
       sourceWith(adapter).search('x'),
-      throwsA(isA<NetworkException>()),
+      throwsA(
+        isA<NetworkException>().having(
+          (error) => error.message,
+          'message',
+          ErrorMessages.offline,
+        ),
+      ),
+    );
+  });
+
+  test('never leaks the raw Dio message for an offline device', () async {
+    final adapter = FakeHttpAdapter(
+      (options) async => throw DioException(
+        requestOptions: options,
+        type: DioExceptionType.connectionError,
+        message:
+            "The connection errored: Failed host lookup: 'www.jiosaavn.com'",
+      ),
+    );
+    await expectLater(
+      sourceWith(adapter).search('x'),
+      throwsA(
+        isA<NetworkException>().having(
+          (error) => error.message,
+          'message',
+          ErrorMessages.offline,
+        ),
+      ),
     );
   });
 

@@ -5,6 +5,7 @@ import 'package:dio/dio.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
+import 'package:aura_music/core/error/error_messages.dart';
 import 'package:aura_music/core/error/exceptions.dart';
 
 /// A progress tick emitted while streaming a download.
@@ -134,21 +135,22 @@ final class DioDownloadEngine implements DownloadEngine {
   AppException _mapError(DioException error) {
     switch (error.type) {
       case DioExceptionType.connectionError:
+      case DioExceptionType.unknown:
+        return const NetworkException(ErrorMessages.offline);
       case DioExceptionType.connectionTimeout:
       case DioExceptionType.sendTimeout:
       case DioExceptionType.receiveTimeout:
-      case DioExceptionType.unknown:
-        return NetworkException(error.message ?? 'Network unavailable');
+        return const NetworkException(ErrorMessages.timeout);
       case DioExceptionType.badResponse:
       case DioExceptionType.transformTimeout:
         return ServerException(
-          error.message ?? 'Server error',
+          ErrorMessages.server,
           statusCode: error.response?.statusCode,
         );
       case DioExceptionType.cancel:
         return const DownloadCancelledException();
       case DioExceptionType.badCertificate:
-        return ServerException(error.message ?? 'Request failed');
+        return const ServerException(ErrorMessages.generic);
     }
   }
 }
