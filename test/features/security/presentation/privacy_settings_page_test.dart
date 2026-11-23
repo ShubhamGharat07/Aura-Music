@@ -1,7 +1,8 @@
-﻿import 'dart:io';
+import 'dart:io';
 
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -21,6 +22,11 @@ import 'package:aura_music/features/security/presentation/pages/privacy_settings
 
 import '../../../helpers/pump_app.dart';
 
+final class _MissingDownloadsDirectory extends Fake implements Directory {
+  @override
+  Future<bool> exists() async => false;
+}
+
 final class _FakeSearchHistoryRepository implements SearchHistoryRepository {
   bool cleared = false;
 
@@ -39,14 +45,17 @@ final class _FakeSearchHistoryRepository implements SearchHistoryRepository {
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+  final messenger =
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+  const screenChannel = MethodChannel('aura/screen');
 
   late AppDatabase db;
-  late Directory downloads;
   late _FakeSearchHistoryRepository searchHistory;
 
   setUp(() async {
+    messenger.setMockMethodCallHandler(screenChannel, (_) async => null);
+    addTearDown(() => messenger.setMockMethodCallHandler(screenChannel, null));
     db = AppDatabase(NativeDatabase.memory());
-    downloads = await Directory.systemTemp.createTemp('aura-privacy');
     searchHistory = _FakeSearchHistoryRepository();
     SharedPreferences.setMockInitialValues({});
     final prefs = await SharedPreferences.getInstance();
@@ -55,7 +64,11 @@ void main() {
       ClearRecentSearches(searchHistory),
     );
     getIt.registerSingleton<DataResetService>(
-      DataResetService(db, prefs, downloadsDirectory: () async => downloads),
+      DataResetService(
+        db,
+        prefs,
+        downloadsDirectory: () async => _MissingDownloadsDirectory(),
+      ),
     );
     getIt.registerSingleton<SecurityCubit>(
       SecurityCubit(
@@ -70,7 +83,6 @@ void main() {
   tearDown(() async {
     await getIt.reset();
     await db.close();
-    if (downloads.existsSync()) await downloads.delete(recursive: true);
   });
 
   Future<void> pumpPage(WidgetTester tester) async {
@@ -97,6 +109,16 @@ void main() {
   testWidgets('clear all data requires the keyword and wipes local state', (
     tester,
   ) async {
+    await db
+        .into(db.likedSongs)
+        .insert(
+          LikedSongsCompanion.insert(
+            trackId: 't1',
+            title: 'Neon',
+            artist: 'Aurora',
+            likedAt: 1,
+          ),
+        );
     await pumpPage(tester);
     await tester.ensureVisible(find.text('Clear all data'));
     await tester.pumpAndSettle();

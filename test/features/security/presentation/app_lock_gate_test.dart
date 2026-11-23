@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:local_auth/local_auth.dart';
@@ -30,9 +31,15 @@ final class _FakeSecurityRepository implements SecurityRepository {
 }
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+  final messenger =
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+  const screenChannel = MethodChannel('aura/screen');
   late _MockLocalAuth auth;
 
   setUp(() {
+    messenger.setMockMethodCallHandler(screenChannel, (_) async => null);
+    addTearDown(() => messenger.setMockMethodCallHandler(screenChannel, null));
     auth = _MockLocalAuth();
     when(() => auth.isDeviceSupported()).thenAnswer((_) async => true);
   });
