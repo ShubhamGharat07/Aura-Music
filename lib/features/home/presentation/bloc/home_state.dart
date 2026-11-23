@@ -4,7 +4,9 @@ import 'package:aura_music/features/catalog/domain/entities/album.dart';
 import 'package:aura_music/features/catalog/domain/entities/artist.dart';
 import 'package:aura_music/features/catalog/domain/entities/catalog_language.dart';
 import 'package:aura_music/features/catalog/domain/entities/genre.dart';
+import 'package:aura_music/features/catalog/domain/entities/playlist.dart';
 import 'package:aura_music/features/player/domain/entities/track.dart';
+import 'package:aura_music/features/podcast/domain/entities/podcast_show.dart';
 
 /// Home state (PRD S03). Each network section carries its own status so the
 /// UI loads them independently.
@@ -153,6 +155,92 @@ final class ArtistSection extends Equatable {
   List<Object?> get props => [status, artists, error];
 }
 
+/// One independently-loaded podcast section.
+final class PodcastSection extends Equatable {
+  /// Creates a section (loading by default).
+  const PodcastSection({
+    this.status = SectionStatus.loading,
+    this.shows = const [],
+    this.error,
+  });
+
+  /// A section holding [shows] (`empty` when the list is empty).
+  factory PodcastSection.ready(List<PodcastShow> shows) => PodcastSection(
+    status: shows.isEmpty ? SectionStatus.empty : SectionStatus.ready,
+    shows: shows,
+  );
+
+  /// A failed section carrying [message].
+  factory PodcastSection.failed(String message) =>
+      PodcastSection(status: SectionStatus.error, error: message);
+
+  /// Current status.
+  final SectionStatus status;
+
+  /// Section shows.
+  final List<PodcastShow> shows;
+
+  /// Error message when [status] is [SectionStatus.error].
+  final String? error;
+
+  /// Copies with overrides.
+  PodcastSection copyWith({
+    SectionStatus? status,
+    List<PodcastShow>? shows,
+    String? error,
+  }) => PodcastSection(
+    status: status ?? this.status,
+    shows: shows ?? this.shows,
+    error: error,
+  );
+
+  @override
+  List<Object?> get props => [status, shows, error];
+}
+
+/// One independently-loaded playlist section (charts / editor's picks).
+final class PlaylistSection extends Equatable {
+  /// Creates a section (loading by default).
+  const PlaylistSection({
+    this.status = SectionStatus.loading,
+    this.playlists = const [],
+    this.error,
+  });
+
+  /// A section holding [playlists] (`empty` when the list is empty).
+  factory PlaylistSection.ready(List<Playlist> playlists) => PlaylistSection(
+    status: playlists.isEmpty ? SectionStatus.empty : SectionStatus.ready,
+    playlists: playlists,
+  );
+
+  /// A failed section carrying [message].
+  factory PlaylistSection.failed(String message) =>
+      PlaylistSection(status: SectionStatus.error, error: message);
+
+  /// Current status.
+  final SectionStatus status;
+
+  /// Section playlists.
+  final List<Playlist> playlists;
+
+  /// Error message when [status] is [SectionStatus.error].
+  final String? error;
+
+  /// Copies with overrides.
+  PlaylistSection copyWith({
+    SectionStatus? status,
+    List<Playlist>? playlists,
+    String? error,
+  }) => PlaylistSection(
+    status: status ?? this.status,
+    playlists: playlists ?? this.playlists,
+    error: error,
+  );
+
+  @override
+  List<Object?> get props => [status, playlists, error];
+}
+
 /// Immutable home state.
 final class HomeState extends Equatable {
   /// Creates the state.
@@ -169,6 +257,11 @@ final class HomeState extends Equatable {
     this.newAlbums = const AlbumSection(),
     this.trendingAlbums = const AlbumSection(),
     this.artists = const ArtistSection(),
+    this.podcasts = const PodcastSection(status: SectionStatus.empty),
+    this.charts = const PlaylistSection(status: SectionStatus.empty),
+    this.editorialPlaylists = const PlaylistSection(
+      status: SectionStatus.empty,
+    ),
     this.continueListening = const [],
     this.seedArtist,
     this.offline = false,
@@ -210,6 +303,15 @@ final class HomeState extends Equatable {
   /// Popular artists.
   final ArtistSection artists;
 
+  /// Top podcasts.
+  final PodcastSection podcasts;
+
+  /// Editorial chart playlists.
+  final PlaylistSection charts;
+
+  /// Editor's pick playlists.
+  final PlaylistSection editorialPlaylists;
+
   /// Locally-derived continue-listening tracks (newest first).
   final List<Track> continueListening;
 
@@ -242,6 +344,9 @@ final class HomeState extends Equatable {
     AlbumSection? newAlbums,
     AlbumSection? trendingAlbums,
     ArtistSection? artists,
+    PodcastSection? podcasts,
+    PlaylistSection? charts,
+    PlaylistSection? editorialPlaylists,
     List<Track>? continueListening,
     String? seedArtist,
     bool? offline,
@@ -260,6 +365,9 @@ final class HomeState extends Equatable {
     newAlbums: newAlbums ?? this.newAlbums,
     trendingAlbums: trendingAlbums ?? this.trendingAlbums,
     artists: artists ?? this.artists,
+    podcasts: podcasts ?? this.podcasts,
+    charts: charts ?? this.charts,
+    editorialPlaylists: editorialPlaylists ?? this.editorialPlaylists,
     continueListening: continueListening ?? this.continueListening,
     seedArtist: seedArtist ?? this.seedArtist,
     offline: offline ?? this.offline,
@@ -279,6 +387,9 @@ final class HomeState extends Equatable {
     newAlbums,
     trendingAlbums,
     artists,
+    podcasts,
+    charts,
+    editorialPlaylists,
     continueListening,
     seedArtist,
     offline,

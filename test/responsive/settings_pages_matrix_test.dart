@@ -1,10 +1,14 @@
-﻿import 'package:flutter/material.dart';
+import 'package:dio/dio.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
+import 'package:aura_music/core/constants/app_constants.dart';
+import 'package:aura_music/core/di/injection.dart';
 import 'package:aura_music/core/responsive/window_size_class.dart';
 import 'package:aura_music/core/services/device_tier_service.dart';
+import 'package:aura_music/core/services/update_service.dart';
 import 'package:aura_music/features/settings/domain/repositories/settings_repository.dart';
 import 'package:aura_music/features/settings/presentation/bloc/settings_cubit.dart';
 import 'package:aura_music/features/settings/presentation/pages/audio_settings_page.dart';
@@ -13,6 +17,8 @@ import 'package:aura_music/features/settings/presentation/pages/updates_settings
 
 import '../helpers/pump_app.dart';
 import '../helpers/window_sizes.dart';
+
+final class _MockUpdateDio extends Mock implements Dio {}
 
 final class _MockSettingsRepository extends Mock
     implements SettingsRepository {}
@@ -53,6 +59,16 @@ void main() {
     });
 
     testWidgets('updates settings fit at $label', (tester) async {
+      // Exercise Android controls without contacting a release server.
+      final dio = _MockUpdateDio();
+      when(
+        () => dio.get<Map<String, dynamic>>(
+          AppConstants.githubReleasesUrl,
+          options: any(named: 'options'),
+        ),
+      ).thenAnswer((_) async => Response(requestOptions: RequestOptions()));
+      getIt.registerSingleton(UpdateService(dio, isAndroid: () => true));
+      addTearDown(() => getIt.unregister<UpdateService>());
       await _pump(tester, cubit, const UpdatesSettingsPage(), size, design);
       expect(find.text('Check for updates'), findsOneWidget);
       expect(find.byType(Scrollable), findsWidgets);

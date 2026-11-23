@@ -24,9 +24,10 @@ final class JiosaavnStreamSource implements StreamSource {
 
   @override
   Future<String?> resolve(Track track) async {
+    if (track.id.startsWith('podcast:')) return track.streamUrl;
     final id = _id(track.id);
     if (id == null) return track.streamUrl;
-    return _client.streamUrlFor(id);
+    return (await _client.streamUrlFor(id)) ?? track.streamUrl;
   }
 
   String? _id(String trackId) =>

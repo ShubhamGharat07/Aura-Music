@@ -61,7 +61,10 @@ Thumbs.db
 *.aab
 *.ipa
 
-# Local agent/skill tooling and working notes (never commit these)
+# Local agent/skill tooling, documentation and working notes (never commit these)
 .agents/
 .opencode/
 skills-lock.json
+skills/
+*.md
+!README.md

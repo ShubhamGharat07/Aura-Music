@@ -17,7 +17,45 @@ final class AppNotificationService {
   static const String _downloadChannelDescription =
       'Progress and completion of offline downloads';
 
+  static const int _updateId = 4202;
+  static const String _updateChannelId = 'aura.updates';
+  static const String _updateChannelName = 'App Updates';
+  static const String _updateChannelDescription =
+      'Notifications for new app updates and releases';
+
+  static const _updatesPayload = 'aura:updates';
+
   final FlutterLocalNotificationsPlugin _plugin;
+  VoidCallback? _updateNavigation;
+  bool _pendingUpdateNavigation = false;
+
+  void bindUpdateNavigation(VoidCallback callback) {
+    _updateNavigation = callback;
+    if (_pendingUpdateNavigation) openUpdates();
+  }
+
+  void openUpdates() {
+    final navigate = _updateNavigation;
+    _pendingUpdateNavigation = navigate == null;
+    navigate?.call();
+  }
+
+  void _onResponse(NotificationResponse response) {
+    if (response.payload == _updatesPayload) openUpdates();
+  }
+
+  Future<bool> requestUpdateNotificationPermission() async {
+    if (!await _ensureReady()) return false;
+    try {
+      final android = _android;
+      if (android == null) return false;
+      return await android.areNotificationsEnabled() == true ||
+          await android.requestNotificationsPermission() == true;
+    } on Object {
+      return false;
+    }
+  }
+
   Future<void>? _initFuture;
   bool _ready = false;
 
@@ -39,7 +77,10 @@ final class AppNotificationService {
           requestSoundPermission: false,
         ),
       );
-      await _plugin.initialize(settings: settings);
+      await _plugin.initialize(
+        settings: settings,
+        onDidReceiveNotificationResponse: _onResponse,
+      );
       await _android?.createNotificationChannel(
         const AndroidNotificationChannel(
           _downloadChannelId,
@@ -51,7 +92,23 @@ final class AppNotificationService {
           showBadge: false,
         ),
       );
+      await _android?.createNotificationChannel(
+        const AndroidNotificationChannel(
+          _updateChannelId,
+          _updateChannelName,
+          description: _updateChannelDescription,
+          importance: Importance.high,
+          playSound: true,
+          enableVibration: true,
+          showBadge: true,
+        ),
+      );
       _ready = true;
+      final launch = await _plugin.getNotificationAppLaunchDetails();
+      final response = launch?.notificationResponse;
+      if (launch?.didNotificationLaunchApp == true && response != null) {
+        _onResponse(response);
+      }
     } on Object catch (error, stack) {
       _ready = false;
       if (kDebugMode) {
@@ -156,6 +213,47 @@ final class AppNotificationService {
           ),
         ),
       );
+    } on Object {
+      // Best-effort only.
+    }
+  }
+
+  /// Shows a notification when a new app version is available.
+  Future<bool> showUpdateAvailable({
+    required String version,
+    required String? releaseTitle,
+  }) async {
+    if (!await _ensureReady()) return false;
+    try {
+      if (await _android?.areNotificationsEnabled() != true) return false;
+      await _plugin.show(
+        id: _updateId,
+        title: 'Aura Music update available',
+        body:
+            'v$version ? ${releaseTitle ?? "Open Updates for the changelog."}',
+        payload: _updatesPayload,
+        notificationDetails: const NotificationDetails(
+          android: AndroidNotificationDetails(
+            _updateChannelId,
+            _updateChannelName,
+            channelDescription: _updateChannelDescription,
+            icon: 'ic_stat_aura',
+            importance: Importance.high,
+            priority: Priority.high,
+            autoCancel: true,
+          ),
+        ),
+      );
+      return true;
+    } on Object {
+      return false;
+    }
+  }
+
+  Future<void> clearUpdateAvailable() async {
+    if (!await _ensureReady()) return;
+    try {
+      await _plugin.cancel(id: _updateId);
     } on Object {
       // Best-effort only.
     }

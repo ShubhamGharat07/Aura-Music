@@ -81,4 +81,28 @@ void main() {
     expect(cubit.state.settings.dynamicColor, isFalse);
     expect(cubit.state.settings.amoled, isTrue);
   });
+
+  test('toggles audio normalization and equalizer with presets', () async {
+    when(() => repository.save(any())).thenAnswer((_) async {});
+
+    await cubit.setAudioNormalization(true);
+    expect(cubit.state.settings.audioNormalization, isTrue);
+
+    await cubit.setEqualizerEnabled(true);
+    expect(cubit.state.settings.equalizerEnabled, isTrue);
+
+    await cubit.setEqualizerPreset('bass_boost');
+    expect(cubit.state.settings.equalizerPreset, 'bass_boost');
+    expect(cubit.state.settings.equalizerBands[0], 5.0);
+
+    await cubit.setEqualizerBandGain(0, 8.0);
+    expect(cubit.state.settings.equalizerPreset, 'custom');
+    expect(cubit.state.settings.equalizerBands[0], 8.0);
+
+    await cubit.setSmartAudioCache(false);
+    expect(cubit.state.settings.smartAudioCache, isFalse);
+
+    await cubit.setMaxCacheSizeMb(1024);
+    expect(cubit.state.settings.maxCacheSizeMb, 1024);
+  });
 }

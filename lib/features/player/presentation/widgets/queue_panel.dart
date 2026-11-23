@@ -3,6 +3,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import 'package:aura_music/core/theme/typography.dart';
 import 'package:aura_music/core/ui/glass_surface.dart';
+import 'package:aura_music/core/ui/playing_bars.dart';
 import 'package:aura_music/core/ui/song_tile.dart';
 import 'package:aura_music/core/ui/state_view.dart';
 import 'package:aura_music/features/player/domain/entities/track.dart';
@@ -19,6 +20,7 @@ final class QueuePanel extends StatelessWidget {
     required this.currentIndex,
     required this.accent,
     this.onSelect,
+    this.playing = false,
     this.onReorder,
     this.onRemove,
     this.onClear,
@@ -30,6 +32,9 @@ final class QueuePanel extends StatelessWidget {
 
   /// Index of the currently playing track.
   final int currentIndex;
+
+  /// Whether the current track is playing.
+  final bool playing;
 
   /// Accent colour.
   final Color accent;
@@ -70,7 +75,7 @@ final class QueuePanel extends StatelessWidget {
         ),
         if (current != null) ...[
           SizedBox(height: 4.w),
-          _NowPlayingTile(track: current, accent: accent),
+          _NowPlayingTile(track: current, accent: accent, playing: playing),
         ],
         SizedBox(height: 12.w),
         Expanded(
@@ -178,9 +183,14 @@ final class _Header extends StatelessWidget {
 }
 
 final class _NowPlayingTile extends StatelessWidget {
-  const _NowPlayingTile({required this.track, required this.accent});
+  const _NowPlayingTile({
+    required this.track,
+    required this.accent,
+    required this.playing,
+  });
 
   final Track track;
+  final bool playing;
   final Color accent;
 
   @override
@@ -188,7 +198,7 @@ final class _NowPlayingTile extends StatelessWidget {
     return GlassSurface.fake(
       borderRadius: 16.r,
       child: ListTile(
-        leading: Icon(Icons.equalizer_rounded, color: accent),
+        leading: PlayingBars(color: accent, size: 20.r, playing: playing),
         title: Text(
           track.title,
           maxLines: 1,

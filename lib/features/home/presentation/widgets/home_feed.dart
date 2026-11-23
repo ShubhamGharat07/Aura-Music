@@ -13,11 +13,15 @@ import 'package:aura_music/features/home/presentation/bloc/home_event.dart';
 import 'package:aura_music/features/home/presentation/bloc/home_state.dart';
 import 'package:aura_music/features/home/presentation/widgets/home_album_grid.dart';
 import 'package:aura_music/features/home/presentation/widgets/home_artists.dart';
+import 'package:aura_music/features/home/presentation/widgets/home_charts.dart';
+import 'package:aura_music/features/home/presentation/widgets/home_editorial_playlists.dart';
 import 'package:aura_music/features/home/presentation/widgets/home_header.dart';
 import 'package:aura_music/features/home/presentation/widgets/home_languages.dart';
 import 'package:aura_music/features/home/presentation/widgets/home_moods.dart';
 import 'package:aura_music/features/home/presentation/widgets/home_offline.dart';
+import 'package:aura_music/features/home/presentation/widgets/home_podcasts.dart';
 import 'package:aura_music/features/home/presentation/widgets/home_quick_picks.dart';
+import 'package:aura_music/features/home/presentation/widgets/home_time_machine.dart';
 import 'package:aura_music/features/home/presentation/widgets/home_track_section.dart';
 import 'package:aura_music/features/home/presentation/widgets/home_your_playlists.dart';
 import 'package:aura_music/features/player/domain/entities/track.dart';
@@ -249,6 +253,42 @@ List<Widget> _sectionList(
             ),
           ),
         ),
+        BlocSelector<HomeBloc, HomeState, PlaylistSection>(
+          selector: (state) => state.charts,
+          builder: (context, section) => SectionSwap(
+            status: section.status,
+            child: HomeCharts(
+              section: section,
+              padding: layout.padding,
+              cardWidth: layout.playlistCardWidth,
+              onRetry: retry,
+            ),
+          ),
+        ),
+        BlocSelector<HomeBloc, HomeState, PlaylistSection>(
+          selector: (state) => state.editorialPlaylists,
+          builder: (context, section) => SectionSwap(
+            status: section.status,
+            child: HomeEditorialPlaylists(
+              section: section,
+              padding: layout.padding,
+              cardWidth: layout.cardWidth,
+              onRetry: retry,
+            ),
+          ),
+        ),
+        BlocSelector<HomeBloc, HomeState, PlaylistSection>(
+          selector: (state) => state.charts,
+          builder: (context, section) => SectionSwap(
+            status: section.status,
+            child: HomeTimeMachine(
+              section: section,
+              padding: layout.padding,
+              cardWidth: layout.cardWidth * 0.84,
+              onRetry: retry,
+            ),
+          ),
+        ),
         BlocSelector<HomeBloc, HomeState, AlbumSection>(
           selector: (state) => state.newAlbums,
           builder: (context, section) => SectionSwap(
@@ -275,6 +315,18 @@ List<Widget> _sectionList(
               onSeeAll: () => context.push(
                 '${AppRoutes.albums}/${AlbumsKind.trending.slug}',
               ),
+              onRetry: retry,
+            ),
+          ),
+        ),
+        BlocSelector<HomeBloc, HomeState, PodcastSection>(
+          selector: (state) => state.podcasts,
+          builder: (context, section) => SectionSwap(
+            status: section.status,
+            child: HomePodcasts(
+              section: section,
+              padding: layout.padding,
+              cardWidth: layout.cardWidth,
               onRetry: retry,
             ),
           ),

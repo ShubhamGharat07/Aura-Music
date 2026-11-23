@@ -258,6 +258,7 @@ final class _ExpandedPlayerBar extends StatelessWidget {
           title: track.title,
           subtitle: track.artist,
           artUrl: track.artUrl,
+          heroTag: 'player-art-${track.id}',
           isPlaying: state.isPlaying,
           busy: state.status == PlaybackStatus.loading,
           onPlayPause: () => bloc.add(const PlayerPlayPauseToggled()),

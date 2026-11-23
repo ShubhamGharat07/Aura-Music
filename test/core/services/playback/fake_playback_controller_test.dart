@@ -96,4 +96,21 @@ void main() {
     await doneSub.cancel();
     await statusSub.cancel();
   });
+
+  test('audio normalization and equalizer setters update state', () async {
+    final controller = FakePlaybackController();
+    addTearDown(controller.dispose);
+
+    await controller.setAudioNormalization(true);
+    expect(controller.audioNormalization, isTrue);
+
+    await controller.setEqualizerEnabled(true);
+    expect(controller.equalizerEnabled, isTrue);
+
+    await controller.setEqualizerBands(const [1.0, 2.0, 3.0, 4.0, 5.0]);
+    expect(controller.equalizerBands, [1.0, 2.0, 3.0, 4.0, 5.0]);
+
+    await controller.setEqualizerBandGain(0, 7.5);
+    expect(controller.equalizerBands[0], 7.5);
+  });
 }

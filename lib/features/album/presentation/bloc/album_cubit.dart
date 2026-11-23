@@ -47,10 +47,14 @@ final class AlbumCubit extends Cubit<AlbumState> {
 
   final GetAlbum _getAlbum;
 
+  int _request = 0;
+
   /// Loads (or reloads) the album for [id].
   Future<void> load(String id) async {
+    final request = ++_request;
     emit(const AlbumState());
     final result = await _getAlbum(id);
+    if (isClosed || request != _request) return;
     result.fold(
       (failure) =>
           emit(AlbumState(status: AlbumStatus.error, error: failure.message)),

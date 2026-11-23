@@ -11,6 +11,12 @@ final class AppSettings extends Equatable {
     this.amoled = false,
     this.playbackSpeed = 1.0,
     this.skipSilence = false,
+    this.audioNormalization = true,
+    this.equalizerEnabled = true,
+    this.equalizerPreset = 'flat',
+    this.equalizerBands = const <double>[0.0, 0.0, 0.0, 0.0, 0.0],
+    this.smartAudioCache = true,
+    this.maxCacheSizeMb = 512,
   });
 
   /// Creates defaults.
@@ -31,6 +37,24 @@ final class AppSettings extends Equatable {
   /// Skip silent passages while playing (Android / iOS).
   final bool skipSilence;
 
+  /// Normalizes track loudness to standard level (-14 LUFS).
+  final bool audioNormalization;
+
+  /// Master switch for the on-device Equalizer.
+  final bool equalizerEnabled;
+
+  /// Active equalizer preset name ('flat', 'bass_boost', 'vocals', etc.).
+  final String equalizerPreset;
+
+  /// 5-band EQ gain levels in dB (-12.0 to +12.0).
+  final List<double> equalizerBands;
+
+  /// Automatically caches streamed songs to disk for zero-internet instant replay.
+  final bool smartAudioCache;
+
+  /// Maximum disk space allocated for audio caching in megabytes.
+  final int maxCacheSizeMb;
+
   /// Copies with overrides.
   AppSettings copyWith({
     String? glassOverride,
@@ -38,6 +62,12 @@ final class AppSettings extends Equatable {
     bool? amoled,
     double? playbackSpeed,
     bool? skipSilence,
+    bool? audioNormalization,
+    bool? equalizerEnabled,
+    String? equalizerPreset,
+    List<double>? equalizerBands,
+    bool? smartAudioCache,
+    int? maxCacheSizeMb,
     bool clearGlass = false,
   }) {
     return AppSettings(
@@ -46,6 +76,12 @@ final class AppSettings extends Equatable {
       amoled: amoled ?? this.amoled,
       playbackSpeed: playbackSpeed ?? this.playbackSpeed,
       skipSilence: skipSilence ?? this.skipSilence,
+      audioNormalization: audioNormalization ?? this.audioNormalization,
+      equalizerEnabled: equalizerEnabled ?? this.equalizerEnabled,
+      equalizerPreset: equalizerPreset ?? this.equalizerPreset,
+      equalizerBands: equalizerBands ?? this.equalizerBands,
+      smartAudioCache: smartAudioCache ?? this.smartAudioCache,
+      maxCacheSizeMb: maxCacheSizeMb ?? this.maxCacheSizeMb,
     );
   }
 
@@ -56,5 +92,11 @@ final class AppSettings extends Equatable {
     amoled,
     playbackSpeed,
     skipSilence,
+    audioNormalization,
+    equalizerEnabled,
+    equalizerPreset,
+    equalizerBands,
+    smartAudioCache,
+    maxCacheSizeMb,
   ];
 }

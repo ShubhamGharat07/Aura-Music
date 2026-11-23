@@ -437,9 +437,9 @@ final class _PlayAllButton extends HookWidget {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Icon(
+                Icon(
                   Icons.play_arrow_rounded,
-                  size: 21,
+                  size: 21.r,
                   color: AppColors.bg,
                 ),
                 SizedBox(width: 7.w),
@@ -619,13 +619,13 @@ final class _TopPicksLoading extends StatelessWidget {
                 Skeleton(
                   width: 180.w,
                   height: 30.h,
-                  borderRadius: BorderRadius.circular(6),
+                  borderRadius: BorderRadius.circular(6.r),
                 ),
                 SizedBox(height: 12.h),
                 Skeleton(
                   width: 245.w,
                   height: 10.h,
-                  borderRadius: BorderRadius.circular(3),
+                  borderRadius: BorderRadius.circular(3.r),
                 ),
                 SizedBox(height: 26.h),
                 Row(
@@ -644,18 +644,18 @@ final class _TopPicksLoading extends StatelessWidget {
                           Skeleton(
                             width: 44.w,
                             height: 8.h,
-                            borderRadius: BorderRadius.circular(2),
+                            borderRadius: BorderRadius.circular(2.r),
                           ),
                           SizedBox(height: 12.h),
                           Skeleton(
                             height: 17.h,
-                            borderRadius: BorderRadius.circular(4),
+                            borderRadius: BorderRadius.circular(4.r),
                           ),
                           SizedBox(height: 7.h),
                           Skeleton(
                             width: 130.w,
                             height: 14.h,
-                            borderRadius: BorderRadius.circular(4),
+                            borderRadius: BorderRadius.circular(4.r),
                           ),
                         ],
                       ),
@@ -676,7 +676,7 @@ final class _TopPicksLoading extends StatelessWidget {
                         Skeleton(
                           width: 20.w,
                           height: 8.h,
-                          borderRadius: BorderRadius.circular(2),
+                          borderRadius: BorderRadius.circular(2.r),
                         ),
                         SizedBox(width: 12.w),
                         Skeleton(
@@ -691,16 +691,16 @@ final class _TopPicksLoading extends StatelessWidget {
                             children: [
                               Skeleton(
                                 height: 10.h,
-                                borderRadius: const BorderRadius.all(
-                                  Radius.circular(3),
+                                borderRadius: BorderRadius.all(
+                                  Radius.circular(3.r),
                                 ),
                               ),
-                              const SizedBox(height: 7),
+                              SizedBox(height: 7.h),
                               Skeleton(
-                                width: 110,
+                                width: 110.w,
                                 height: 8.h,
-                                borderRadius: const BorderRadius.all(
-                                  Radius.circular(3),
+                                borderRadius: BorderRadius.all(
+                                  Radius.circular(3.r),
                                 ),
                               ),
                             ],

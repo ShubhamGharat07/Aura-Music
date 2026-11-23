@@ -472,4 +472,23 @@ void main() {
     expect(second.isLeft(), isTrue);
     expect(adapter.requests, hasLength(2));
   });
+
+  test('topPodcasts queries catalog for top shows', () async {
+    final adapter = FakeHttpAdapter(
+      (_) async => jsonResponse({
+        'data': [
+          {'id': 'pod1', 'title': 'Talking Music'},
+        ],
+      }),
+    );
+
+    final result = await repoWith(adapter).topPodcasts(limit: 5);
+
+    expect(result.getOrElse((_) => fail('expected Right')), hasLength(1));
+    expect(
+      adapter.requests.single.queryParameters['__call'],
+      'content.getTopShows',
+    );
+    expect(adapter.requests.single.queryParameters['n'], '5');
+  });
 }

@@ -1,4 +1,4 @@
-﻿import 'dart:async';
+import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 
@@ -103,6 +103,38 @@ final class FakePlaybackController implements PlaybackController {
 
   @override
   Future<void> setSkipSilence(bool enabled) async => _skipSilence = enabled;
+
+  bool _normalization = false;
+  bool _eqEnabled = false;
+  List<double> _bands = <double>[0.0, 0.0, 0.0, 0.0, 0.0];
+
+  @override
+  Future<void> setAudioNormalization(bool enabled) async =>
+      _normalization = enabled;
+
+  @override
+  Future<void> setEqualizerEnabled(bool enabled) async => _eqEnabled = enabled;
+
+  @override
+  Future<void> setEqualizerBandGain(int bandIndex, double gain) async {
+    if (bandIndex >= 0 && bandIndex < _bands.length) {
+      _bands[bandIndex] = gain;
+    }
+  }
+
+  @override
+  Future<void> setEqualizerBands(List<double> bands) async {
+    _bands = List<double>.from(bands);
+  }
+
+  /// Current fake normalization flag; exposed for tests.
+  bool get audioNormalization => _normalization;
+
+  /// Current fake EQ enabled flag; exposed for tests.
+  bool get equalizerEnabled => _eqEnabled;
+
+  /// Current fake EQ bands; exposed for tests.
+  List<double> get equalizerBands => _bands;
 
   /// Current fake rate; exposed for tests.
   double get speed => _speed;

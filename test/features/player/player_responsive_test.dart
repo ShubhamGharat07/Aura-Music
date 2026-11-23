@@ -96,6 +96,14 @@ final class _SilentController implements PlaybackController {
   Future<void> setSpeed(double speed) async {}
   @override
   Future<void> setSkipSilence(bool enabled) async {}
+  @override
+  Future<void> setAudioNormalization(bool enabled) async {}
+  @override
+  Future<void> setEqualizerEnabled(bool enabled) async {}
+  @override
+  Future<void> setEqualizerBandGain(int bandIndex, double gain) async {}
+  @override
+  Future<void> setEqualizerBands(List<double> bands) async {}
 
   @override
   Future<void> dispose() async {

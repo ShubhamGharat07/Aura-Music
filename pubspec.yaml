@@ -16,7 +16,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
-version: 1.0.0+1
+version: 2.0.1+2
 
 environment:
   sdk: ^3.10.0
@@ -67,6 +67,8 @@ dependencies:
   flutter_ble_peripheral: ^3.1.0
   flutter_local_notifications: ^22.3.2
   flutter_animate: ^4.5.2
+  background_downloader: 9.5.4
+  crypto: ^3.0.8
 
 dev_dependencies:
   flutter_test:
@@ -144,13 +146,13 @@ flutter:
 flutter_launcher_icons:
   android: true
   ios: true
-  image_path: "assets/icons/Auramusiclogo.png"
+  image_path: "assets/icons/appicon.png"
   min_sdk_android: 21
-  adaptive_icon_background: "#020310"
-  adaptive_icon_foreground: "assets/icons/Auramusiclogo_adaptive.png"
-  adaptive_icon_foreground_inset: 0
+  adaptive_icon_background: "#010101"
+  adaptive_icon_foreground: "assets/icons/appicon.png"
+  adaptive_icon_foreground_inset: 16
   remove_alpha_ios: true
-  background_color_ios: "#020310"
+  background_color_ios: "#010101"
 
 # Native SQLite build with encryption support (PRD 9.2). The SQLite3 Multiple
 # Ciphers build provides SQLCipher-compatible PRAGMA key without requiring

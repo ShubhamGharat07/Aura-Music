@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 
+import 'package:aura_music/core/di/injection.dart';
 import 'package:aura_music/core/responsive/max_content_width.dart';
 import 'package:aura_music/core/responsive/responsive_insets.dart';
 import 'package:aura_music/core/responsive/window_size_class.dart';
 import 'package:aura_music/core/router/routes.dart';
+import 'package:aura_music/core/services/update_service.dart';
 import 'package:aura_music/core/theme/colors.dart';
 import 'package:aura_music/core/theme/typography.dart';
 import 'package:aura_music/l10n/generated/app_localizations.dart';
@@ -60,12 +62,7 @@ final class SettingsPage extends StatelessWidget {
                   subtitle: 'Playback speed, skip silence, equalizer',
                   route: AppRoutes.settingsAudio,
                 ),
-                _SettingsTile(
-                  icon: Icons.system_update_alt_rounded,
-                  title: 'Updates',
-                  subtitle: 'Installed version and update checks',
-                  route: AppRoutes.settingsUpdates,
-                ),
+                const _UpdatesTile(),
               ],
             ),
             SizedBox(height: 26.w),
@@ -133,19 +130,22 @@ final class _Group extends StatelessWidget {
         border: Border.all(color: AppColors.glassBorder, width: 0.7),
       ),
       padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 4.w),
-      child: Column(
-        children: [
-          for (var i = 0; i < children.length; i++) ...[
-            if (i > 0)
-              Divider(
-                height: 1,
-                thickness: 0.6,
-                indent: 44.w,
-                color: AppColors.glassBorder,
-              ),
-            children[i],
+      child: Material(
+        type: MaterialType.transparency,
+        child: Column(
+          children: [
+            for (var i = 0; i < children.length; i++) ...[
+              if (i > 0)
+                Divider(
+                  height: 1,
+                  thickness: 0.6,
+                  indent: 44.w,
+                  color: AppColors.glassBorder,
+                ),
+              children[i],
+            ],
           ],
-        ],
+        ),
       ),
     );
   }
@@ -188,4 +188,26 @@ final class _SettingsTile extends StatelessWidget {
       onTap: () => context.push(route),
     );
   }
+}
+
+final class _UpdatesTile extends StatelessWidget {
+  const _UpdatesTile();
+
+  @override
+  Widget build(BuildContext context) {
+    if (!getIt.isRegistered<UpdateService>()) return _tile(false);
+    return ValueListenableBuilder(
+      valueListenable: getIt<UpdateService>().latest,
+      builder: (context, update, _) => _tile(update?.isUpdateAvailable == true),
+    );
+  }
+
+  Widget _tile(bool available) => _SettingsTile(
+    icon: Icons.system_update_alt_rounded,
+    title: 'Updates',
+    subtitle: available
+        ? 'Update available'
+        : 'Installed version and update checks',
+    route: AppRoutes.settingsUpdates,
+  );
 }

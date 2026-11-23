@@ -12,8 +12,10 @@ import 'package:aura_music/features/catalog/domain/entities/album.dart';
 import 'package:aura_music/features/catalog/domain/entities/artist.dart';
 import 'package:aura_music/features/catalog/domain/entities/catalog_language.dart';
 import 'package:aura_music/features/catalog/domain/entities/genre.dart';
+import 'package:aura_music/features/catalog/domain/entities/playlist.dart';
 import 'package:aura_music/features/home/domain/repositories/home_repository.dart';
 import 'package:aura_music/features/player/domain/entities/track.dart';
+import 'package:aura_music/features/podcast/domain/entities/podcast_show.dart';
 
 /// [HomeRepository] implementation over the JioSaavn catalog. Each section is
 /// an independent call so a failure in one leaves the others usable, and a
@@ -208,6 +210,21 @@ final class HomeRepositoryImpl implements HomeRepository {
         decode: decodeArtists,
         diskTtl: _editorialDiskTtl,
       );
+
+  @override
+  Future<Either<Failure, List<PodcastShow>>> topPodcasts({int limit = 20}) =>
+      guardRemote(() => _remote.topPodcasts(limit: limit));
+
+  /// Charts / editorial playlists read the memoised launch payload, so the
+  /// remote source already de-duplicates them; no extra cache is needed.
+  @override
+  Future<Either<Failure, List<Playlist>>> charts({int limit = 12}) =>
+      guardRemote(() => _remote.charts(limit: limit));
+
+  @override
+  Future<Either<Failure, List<Playlist>>> editorialPlaylists({
+    int limit = 12,
+  }) => guardRemote(() => _remote.editorialPlaylists(limit: limit));
 
   /// Serves [key] from [cache], otherwise runs [load] once. Concurrent callers
   /// for the same key share a single in-flight request instead of firing

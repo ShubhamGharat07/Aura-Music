@@ -1,6 +1,9 @@
 ﻿import 'package:flutter_bloc/flutter_bloc.dart';
 
+import 'package:aura_music/core/constants/app_constants.dart';
 import 'package:aura_music/core/usecase/usecase.dart';
+import 'package:aura_music/core/utils/ttl_cache.dart';
+import 'package:aura_music/features/player/domain/entities/track.dart';
 import 'package:aura_music/features/search/domain/entities/search_results.dart';
 import 'package:aura_music/features/search/domain/usecases/clear_recent_searches.dart';
 import 'package:aura_music/features/search/domain/usecases/get_browse_suggestions.dart';
@@ -26,8 +29,10 @@ final class SearchBloc extends Bloc<SearchEvent, SearchState> {
     this._getRecent,
     this._saveRecent,
     this._clearRecent,
-    this._removeRecent,
-  ) : super(const SearchState()) {
+    this._removeRecent, {
+    Duration suggestionDebounce = AppConstants.searchDebounce,
+  }) : _suggestionDebounce = suggestionDebounce,
+       super(const SearchState()) {
     on<SearchRecentRequested>(_onRecentRequested);
     on<SearchBrowseRequested>(_onBrowseRequested);
     on<SearchQueryChanged>(_onQueryChanged);
@@ -44,6 +49,11 @@ final class SearchBloc extends Bloc<SearchEvent, SearchState> {
   final SaveRecentSearch _saveRecent;
   final ClearRecentSearches _clearRecent;
   final RemoveRecentSearch _removeRecent;
+
+  final Duration _suggestionDebounce;
+  final _suggestionCache = TtlCache<String, List<Track>>(
+    ttl: const Duration(minutes: 2),
+  );
 
   int _token = 0;
 
@@ -92,29 +102,39 @@ final class SearchBloc extends Bloc<SearchEvent, SearchState> {
       );
       return;
     }
-    // Typing then submitting fires both events: the debounced echo lands after
-    // (or during) the submit and used to flip results back to suggestions,
-    // forcing a second search. An echo of the query already submitted is a
-    // no-op; only genuinely new text switches back to type-ahead.
-    if (trimmed == state.query &&
-        state.status != SearchStatus.suggesting &&
-        state.status != SearchStatus.idle) {
-      return;
-    }
+    if (trimmed == state.query) return;
+
     final token = ++_token;
+    final key = trimmed.toLowerCase();
+    final cached = _suggestionCache.get(key);
     emit(
       state.copyWith(
         status: SearchStatus.suggesting,
         query: trimmed,
+        suggestions: cached ?? const [],
+        results: const SearchResults(),
         error: null,
       ),
     );
+    if (cached != null) return;
+
+    await Future<void>.delayed(_suggestionDebounce);
+    if (token != _token || emit.isDone) return;
     final result = await _getSuggestions(trimmed);
-    if (token != _token) return;
-    result.fold(
-      (_) => emit(state.copyWith(suggestions: const [])),
-      (tracks) => emit(state.copyWith(suggestions: tracks)),
-    );
+    if (token != _token || emit.isDone) return;
+    result.match((_) {}, (tracks) {
+      final titles = <String>{};
+      final unique = <Track>[
+        for (final track in tracks)
+          if (track.title.trim().isNotEmpty &&
+              titles.add(track.title.trim().toLowerCase()))
+            track,
+      ];
+      // Keep only a small, in-memory cache for edits like backspacing.
+      if (_suggestionCache.length >= 32) _suggestionCache.clear();
+      _suggestionCache.set(key, unique);
+      emit(state.copyWith(suggestions: unique));
+    });
   }
 
   Future<void> _onSubmitted(

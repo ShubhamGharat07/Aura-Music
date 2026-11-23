@@ -59,32 +59,41 @@ final class SearchResultsView extends StatelessWidget {
             if (_visible(SearchFilter.songs) && results.songs.isNotEmpty)
               ..._songs(),
             if (_visible(SearchFilter.albums) && results.albums.isNotEmpty)
-              ..._media(
-                'Albums',
-                results.albums.length,
-                constraints.maxWidth,
-                (i) => MediaCard(
-                  title: results.albums[i].title,
-                  subtitle: results.albums[i].artist,
-                  artUrl: results.albums[i].artUrl,
+              ..._media('Albums', results.albums.length, constraints.maxWidth, (
+                i,
+              ) {
+                final item = results.albums[i];
+                final tag = ('search-album', item.id, i);
+                return MediaCard(
+                  heroTag: tag,
+                  title: item.title,
+                  subtitle: item.artist,
+                  artUrl: item.artUrl,
                   onTap: () => context.push(
-                    '${AppRoutes.album}/${results.albums[i].id}',
+                    '${AppRoutes.album}/${item.id}',
+                    extra: (item, tag),
                   ),
-                ),
-              ),
+                );
+              }),
             if (_visible(SearchFilter.artists) && results.artists.isNotEmpty)
               ..._media(
                 'Artists',
                 results.artists.length,
                 constraints.maxWidth,
-                (i) => MediaCard(
-                  title: results.artists[i].name,
-                  subtitle: results.artists[i].role ?? 'Artist',
-                  artUrl: results.artists[i].imageUrl,
-                  onTap: () => context.push(
-                    '${AppRoutes.artist}/${results.artists[i].id}',
-                  ),
-                ),
+                (i) {
+                  final item = results.artists[i];
+                  final tag = ('search-artist', item.id, i);
+                  return MediaCard(
+                    heroTag: tag,
+                    title: item.name,
+                    subtitle: item.role ?? 'Artist',
+                    artUrl: item.imageUrl,
+                    onTap: () => context.push(
+                      '${AppRoutes.artist}/${item.id}',
+                      extra: (item, tag),
+                    ),
+                  );
+                },
               ),
             if (_visible(SearchFilter.playlists) &&
                 results.playlists.isNotEmpty)
@@ -100,6 +109,28 @@ final class SearchResultsView extends StatelessWidget {
                     '${AppRoutes.playlist}/${results.playlists[i].id}',
                   ),
                 ),
+              ),
+            if (_visible(SearchFilter.podcasts) && results.podcasts.isNotEmpty)
+              ..._media(
+                'Podcasts',
+                results.podcasts.length,
+                constraints.maxWidth,
+                (i) {
+                  final item = results.podcasts[i];
+                  final tag = ('search-podcast', item.id, i);
+                  return MediaCard(
+                    heroTag: tag,
+                    title: item.title,
+                    subtitle: item.subtitle?.isNotEmpty == true
+                        ? item.subtitle!
+                        : 'Podcast',
+                    artUrl: item.artUrl,
+                    onTap: () => context.push(
+                      '${AppRoutes.podcast}/${item.id}',
+                      extra: (item, tag),
+                    ),
+                  );
+                },
               ),
             // Same end clearance as the idle view.
             SliverToBoxAdapter(

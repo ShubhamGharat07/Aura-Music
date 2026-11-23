@@ -1,12 +1,17 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+
+import 'package:aura_music/core/hooks/use_playback_motion.dart';
+import 'package:aura_music/core/ui/aura_hero.dart';
 
 // Album artwork for the Now Playing screen (F04 gestures): swipe the art
 // left/right to change track, double-tap to like. Pure presentation.
 
 /// Player artwork with swipe / double-tap gestures.
-final class PlayerArtwork extends StatelessWidget {
+final class PlayerArtwork extends HookWidget {
   /// Creates the artwork.
   const PlayerArtwork({
     super.key,
@@ -16,6 +21,8 @@ final class PlayerArtwork extends StatelessWidget {
     this.onPrevious,
     this.onDoubleTap,
     this.radius = 20,
+    this.heroTag,
+    this.playing = false,
   });
 
   /// Accent colour for the gradient fallback.
@@ -36,8 +43,82 @@ final class PlayerArtwork extends StatelessWidget {
   /// Corner radius.
   final double radius;
 
+  /// Hero tag shared with the mini-player thumbnail (null = no hero).
+  final Object? heroTag;
+
+  /// Whether audio is currently playing.
+  final bool playing;
+
   @override
   Widget build(BuildContext context) {
+    final breathe = usePlaybackMotion(context, playing: playing);
+    final controller = useAnimationController(
+      duration: const Duration(seconds: 4),
+    );
+    final scale = useMemoized(
+      () => controller.drive(
+        Tween(
+          begin: 1.0,
+          end: 1.015,
+        ).chain(CurveTween(curve: Curves.easeInOutSine)),
+      ),
+      [controller],
+    );
+    useEffect(() {
+      if (breathe) {
+        controller.repeat(reverse: true);
+      } else {
+        controller.reset();
+      }
+      return null;
+    }, [controller, breathe]);
+    final art = AspectRatio(
+      aspectRatio: 1,
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          // Decode close to the on-screen size instead of a fixed 720 px.
+          // Tablets get sharper art; phones stop wasting memory on a
+          // bitmap larger than the slot.
+          final dpr = MediaQuery.devicePixelRatioOf(context);
+          final cacheSize = (constraints.biggest.shortestSide * dpr)
+              .round()
+              .clamp(256, 1024);
+          return ClipRRect(
+            borderRadius: BorderRadius.circular(radius),
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                if (artUrl == null)
+                  _placeholder()
+                else
+                  CachedNetworkImage(
+                    imageUrl: artUrl!,
+                    memCacheWidth: cacheSize,
+                    memCacheHeight: cacheSize,
+                    fit: BoxFit.cover,
+                    fadeInDuration: const Duration(milliseconds: 220),
+                    placeholder: (context, url) => _placeholder(),
+                    errorWidget: (context, url, error) => _placeholder(),
+                  ),
+                IgnorePointer(
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(radius),
+                      border: Border.all(
+                        color: Colors.white.withValues(alpha: 0.1),
+                        width: 0.7,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+    final tag = heroTag;
+    final like = onDoubleTap;
     return GestureDetector(
       onHorizontalDragEnd: (details) {
         final velocity = details.primaryVelocity ?? 0;
@@ -47,51 +128,16 @@ final class PlayerArtwork extends StatelessWidget {
           onPrevious?.call();
         }
       },
-      onDoubleTap: onDoubleTap,
-      child: AspectRatio(
-        aspectRatio: 1,
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            // Decode close to the on-screen size instead of a fixed 720 px.
-            // Tablets get sharper art; phones stop wasting memory on a
-            // bitmap larger than the slot.
-            final dpr = MediaQuery.devicePixelRatioOf(context);
-            final cacheSize = (constraints.maxWidth * dpr).round().clamp(
-              256,
-              1024,
-            );
-            return ClipRRect(
-              borderRadius: BorderRadius.circular(radius),
-              child: Stack(
-                fit: StackFit.expand,
-                children: [
-                  if (artUrl == null)
-                    _placeholder()
-                  else
-                    CachedNetworkImage(
-                      imageUrl: artUrl!,
-                      memCacheWidth: cacheSize,
-                      memCacheHeight: cacheSize,
-                      fit: BoxFit.cover,
-                      fadeInDuration: const Duration(milliseconds: 220),
-                      placeholder: (context, url) => _placeholder(),
-                      errorWidget: (context, url, error) => _placeholder(),
-                    ),
-                  IgnorePointer(
-                    child: DecoratedBox(
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(radius),
-                        border: Border.all(
-                          color: Colors.white.withValues(alpha: 0.1),
-                          width: 0.7,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            );
-          },
+      onDoubleTap: like == null
+          ? null
+          : () {
+              HapticFeedback.selectionClick();
+              like();
+            },
+      child: ScaleTransition(
+        scale: scale,
+        child: RepaintBoundary(
+          child: tag == null ? art : AuraHero(tag: tag, child: art),
         ),
       ),
     );

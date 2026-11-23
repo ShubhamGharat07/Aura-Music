@@ -20,6 +20,10 @@ import 'package:aura_music/features/catalog/domain/entities/genre.dart';
 import 'package:aura_music/features/catalog/domain/entities/playlist.dart';
 import 'package:aura_music/features/catalog/domain/entities/playlist_detail.dart';
 import 'package:aura_music/features/player/domain/entities/track.dart';
+import 'package:aura_music/features/podcast/data/models/jiosaavn_episode_model.dart';
+import 'package:aura_music/features/podcast/data/models/jiosaavn_podcast_model.dart';
+import 'package:aura_music/features/podcast/domain/entities/podcast_episode.dart';
+import 'package:aura_music/features/podcast/domain/entities/podcast_show.dart';
 
 /// JioSaavn client (data layer only): catalog search, curated feed, detail
 /// pages and inline stream resolution.
@@ -208,6 +212,26 @@ final class JiosaavnRemoteDataSource {
     ).take(limit).map(_mapper.artist).toList(growable: false);
   }
 
+  /// Top charts (`webapi.getLaunchData` → `charts`).
+  ///
+  /// The launch payload already ships the editorial chart playlists, so the
+  /// section costs no extra round trip. Empty when the payload omits them.
+  Future<List<Playlist>> charts({int limit = 12}) async {
+    final json = await _launch();
+    return JiosaavnPlaylistModel.listFrom(
+      json['charts'],
+    ).take(limit).map(_mapper.playlist).toList(growable: false);
+  }
+
+  /// Editorially curated playlists (`webapi.getLaunchData` →
+  /// `top_playlists`). Shares the launch payload with [charts] / [genres].
+  Future<List<Playlist>> editorialPlaylists({int limit = 12}) async {
+    final json = await _launch();
+    return JiosaavnPlaylistModel.listFrom(
+      json['top_playlists'],
+    ).take(limit).map(_mapper.playlist).toList(growable: false);
+  }
+
   /// Memoised launch payload. The mood row and the artist row both read it, so
   /// they share a single round trip instead of firing two identical calls on
   /// the first Home paint.
@@ -264,6 +288,56 @@ final class JiosaavnRemoteDataSource {
       }),
     ),
   );
+
+  /// Top / trending podcasts from JioSaavn (`content.getTopShows`).
+  Future<List<PodcastShow>> topPodcasts({int limit = 20, int page = 1}) async {
+    final json = await _get(<String, dynamic>{
+      '__call': 'content.getTopShows',
+      'n': '$limit',
+      'p': '$page',
+    });
+    return JiosaavnPodcastModel.listFrom(
+      json['data'],
+    ).map((model) => model.toEntity()).toList(growable: false);
+  }
+
+  /// Full-text search for podcasts / shows (`autocomplete.get`).
+  Future<List<PodcastShow>> searchPodcasts(
+    String query, {
+    int limit = 20,
+  }) async {
+    final trimmed = query.trim();
+    if (trimmed.isEmpty) return const <PodcastShow>[];
+    final json = await _get(<String, dynamic>{
+      '__call': 'autocomplete.get',
+      'query': trimmed,
+    });
+    final showsData = json['shows'] is Map<String, dynamic>
+        ? (json['shows'] as Map<String, dynamic>)['data']
+        : null;
+    return JiosaavnPodcastModel.listFrom(
+      showsData,
+    ).take(limit).map((model) => model.toEntity()).toList(growable: false);
+  }
+
+  /// Episodes of a podcast show (`show.getAllEpisodes`).
+  Future<List<PodcastEpisode>> podcastEpisodes(
+    String showId, {
+    int season = 1,
+    int page = 1,
+    int limit = 30,
+  }) async {
+    final json = await _getList(<String, dynamic>{
+      '__call': 'show.getAllEpisodes',
+      'show_id': showId,
+      'season_number': '$season',
+      'page': '$page',
+      'n': '$limit',
+    });
+    return JiosaavnEpisodeModel.listFrom(
+      json,
+    ).map((model) => model.toEntity()).toList(growable: false);
+  }
 
   /// Resolves a fresh stream URL for a JioSaavn song [id] (`song.getDetails`).
   ///

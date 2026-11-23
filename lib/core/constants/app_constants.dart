@@ -1,4 +1,4 @@
-﻿// App-wide immutable constants (PRD sections 9-10).
+// App-wide immutable constants (PRD sections 9-10).
 //
 // No magic numbers in widgets: import from here or [AppTokens].
 
@@ -16,9 +16,11 @@ abstract final class AppConstants {
   /// How often the update check may run at most.
   static const Duration updateCheckInterval = Duration(hours: 12);
 
-  /// JSON manifest read by the in-app update checker. Empty = this build has
-  /// no update channel, so Settings > Updates reports it as not configured.
-  static const String updateManifestUrl = '';
+  /// GitHub repository for OTA releases (PRD S21 / F15).
+  static const String githubOwner = 'ShubhamGharat07';
+  static const String githubRepo = 'Aura-Music';
+  static const String githubReleasesUrl =
+      'https://api.github.com/repos/$githubOwner/$githubRepo/releases/latest';
 
   /// Queue + position autosave interval.
   static const Duration queueAutosaveInterval = Duration(seconds: 5);

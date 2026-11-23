@@ -36,11 +36,18 @@ void main() {
           {'id': 'p1', 'title': 'Playlist'},
         ],
       }),
+      'autocomplete.get' => jsonResponse({
+        'shows': {
+          'data': [
+            {'id': 'pod1', 'title': 'Podcast Show'},
+          ],
+        },
+      }),
       _ => jsonResponse({'results': const []}),
     },
   );
 
-  test('combines the four type queries into grouped results', () async {
+  test('combines the five type queries into grouped results', () async {
     final adapter = fullAdapter();
 
     final result = await repoWith(adapter).search('neon');
@@ -50,7 +57,8 @@ void main() {
     expect(results.albums.single.title, 'Album');
     expect(results.artists.single.name, 'Artist');
     expect(results.playlists.single.title, 'Playlist');
-    expect(adapter.requests, hasLength(4));
+    expect(results.podcasts.single.title, 'Podcast Show');
+    expect(adapter.requests, hasLength(5));
   });
 
   test('blank query returns empty results without a request', () async {

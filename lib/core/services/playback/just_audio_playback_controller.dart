@@ -13,14 +13,62 @@ import 'package:aura_music/features/player/domain/entities/track.dart';
 ///
 /// Registered in DI; the fake controller is only used by tests.
 
+/// Callback fired when a track starts streaming from the network.
+typedef NetworkStreamStartedCallback = void Function(Track track, String url);
+
 /// just_audio-backed transport.
 final class JustAudioPlaybackController implements PlaybackController {
   /// Creates the controller and wires the player streams.
-  JustAudioPlaybackController({
+  factory JustAudioPlaybackController({
     AudioPlayer? player,
     LocalFileResolver? localFileResolver,
-  }) : _player = player ?? AudioPlayer(),
-       _localFileResolver = localFileResolver {
+    AndroidLoudnessEnhancer? loudnessEnhancer,
+    AndroidEqualizer? equalizer,
+    NetworkStreamStartedCallback? onNetworkStreamStarted,
+  }) {
+    final effectiveEnhancer =
+        loudnessEnhancer ??
+        (defaultTargetPlatform == TargetPlatform.android
+            ? AndroidLoudnessEnhancer()
+            : null);
+    final effectiveEqualizer =
+        equalizer ??
+        (defaultTargetPlatform == TargetPlatform.android
+            ? AndroidEqualizer()
+            : null);
+    final effectivePlayer =
+        player ??
+        (defaultTargetPlatform == TargetPlatform.android &&
+                (effectiveEnhancer != null || effectiveEqualizer != null)
+            ? AudioPlayer(
+                audioPipeline: AudioPipeline(
+                  androidAudioEffects: [
+                    ?effectiveEnhancer,
+                    ?effectiveEqualizer,
+                  ],
+                ),
+              )
+            : AudioPlayer());
+    return JustAudioPlaybackController._(
+      player: effectivePlayer,
+      localFileResolver: localFileResolver,
+      loudnessEnhancer: effectiveEnhancer,
+      equalizer: effectiveEqualizer,
+      onNetworkStreamStarted: onNetworkStreamStarted,
+    );
+  }
+
+  JustAudioPlaybackController._({
+    required AudioPlayer player,
+    LocalFileResolver? localFileResolver,
+    AndroidLoudnessEnhancer? loudnessEnhancer,
+    AndroidEqualizer? equalizer,
+    NetworkStreamStartedCallback? onNetworkStreamStarted,
+  }) : _player = player,
+       _localFileResolver = localFileResolver,
+       _loudnessEnhancer = loudnessEnhancer,
+       _equalizer = equalizer,
+       _onNetworkStreamStarted = onNetworkStreamStarted {
     _positionSub = _player.positionStream.listen(_onPosition);
     _bufferedSub = _player.bufferedPositionStream.listen(
       (p) => _buffered.value = p,
@@ -33,6 +81,9 @@ final class JustAudioPlaybackController implements PlaybackController {
 
   final AudioPlayer _player;
   final LocalFileResolver? _localFileResolver;
+  final AndroidLoudnessEnhancer? _loudnessEnhancer;
+  final AndroidEqualizer? _equalizer;
+  final NetworkStreamStartedCallback? _onNetworkStreamStarted;
   final ValueNotifier<Duration> _position = ValueNotifier(Duration.zero);
   final ValueNotifier<Duration> _buffered = ValueNotifier(Duration.zero);
   final StreamController<void> _completed = StreamController<void>.broadcast();
@@ -128,6 +179,7 @@ final class JustAudioPlaybackController implements PlaybackController {
         );
         if (generation != _loadGeneration) return;
         _hasSource = true;
+        _onNetworkStreamStarted?.call(track, url);
       }
       if (!autoPlay) {
         await _player.pause();
@@ -182,6 +234,67 @@ final class JustAudioPlaybackController implements PlaybackController {
   @override
   Future<void> setSkipSilence(bool enabled) =>
       _player.setSkipSilenceEnabled(enabled);
+
+  @override
+  Future<void> setAudioNormalization(bool enabled) async {
+    final enhancer = _loudnessEnhancer;
+    if (enhancer == null) return;
+    try {
+      await enhancer.setEnabled(enabled);
+      if (enabled) {
+        // Target gain in decibels to level peaks to standard -14 LUFS
+        await enhancer.setTargetGain(1.0);
+      }
+    } on Object {
+      // Audio hardware effects must never crash playback
+    }
+  }
+
+  @override
+  Future<void> setEqualizerEnabled(bool enabled) async {
+    final eq = _equalizer;
+    if (eq == null) return;
+    try {
+      await eq.setEnabled(enabled);
+    } on Object {
+      // Audio hardware effects must never crash playback
+    }
+  }
+
+  @override
+  Future<void> setEqualizerBandGain(int bandIndex, double gain) async {
+    final eq = _equalizer;
+    if (eq == null) return;
+    try {
+      final params = await eq.parameters;
+      if (bandIndex >= 0 && bandIndex < params.bands.length) {
+        final band = params.bands[bandIndex];
+        final clamped = gain.clamp(params.minDecibels, params.maxDecibels);
+        await band.setGain(clamped);
+      }
+    } on Object {
+      // Audio hardware effects must never crash playback
+    }
+  }
+
+  @override
+  Future<void> setEqualizerBands(List<double> bands) async {
+    final eq = _equalizer;
+    if (eq == null) return;
+    try {
+      final params = await eq.parameters;
+      final count = bands.length < params.bands.length
+          ? bands.length
+          : params.bands.length;
+      for (var i = 0; i < count; i++) {
+        final band = params.bands[i];
+        final clamped = bands[i].clamp(params.minDecibels, params.maxDecibels);
+        await band.setGain(clamped);
+      }
+    } on Object {
+      // Audio hardware effects must never crash playback
+    }
+  }
 
   @override
   Future<void> dispose() async {

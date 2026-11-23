@@ -151,35 +151,58 @@ The universal release APK is normally generated as:
 app-release.apk
 ```
 
-> **Before distributing a build:** configure a real release keystore and replace the placeholder application ID `com.example.aura_music`. The current `release` build type still uses the debug signing configuration.
+> **Before distributing a build:** configure release signing in `android/key.properties` and decide the permanent application ID before the first public release. Local builds fall back to debug signing.
+
+### Android OTA release contract
+
+The updater reads the stable GitHub Release and its `update.json` asset. Publish the manifest alongside the signed APKs. The manifest fields are:
+
+| Field | Value |
+| --- | --- |
+| `versionName` | Three-part app version matching the release tag, such as `1.0.1` for `v1.0.1` |
+| `versionCode` | Positive integer build number |
+| `assets` | Array of APK entries, each with `name`, `abi`, `size` in bytes and the signed APK's hex `sha256` |
+| `assets[].versionCode` | Actual Android build number when it differs from the manifest default, for example on Flutter ABI-split APKs |
+
+Use `universal`, `arm64-v8a`, `armeabi-v7a`, `x86_64` or `x86` for the ABI. Use the exact published asset filenames. For a build-only update, a tag such as `v1.0.1+4` is also supported. The release description is shown as the changelog.
+
+Set `storeFile`, `storePassword`, `keyAlias` and `keyPassword` in the ignored `android/key.properties` file. The keystore path is relative to `android/` unless absolute. Set `AURA_REQUIRE_RELEASE_SIGNING=true` for public release builds to fail if signing is missing. An existing installation can update only to a higher build code with the same application ID and signing key.
 
 ## GitHub Releases & Downloads
 
 Aura Music uses GitHub Releases to distribute Android APK builds.
 
-- **Download Latest APK:** [Download Aura Music](https://github.com/ShubhamGharat07/Aura-Music/releases/latest/download/app-release.apk)
+- **Download Latest Release:** [Browse Latest Release & Downloads](https://github.com/ShubhamGharat07/Aura-Music/releases/latest)
 - **Previous Versions:** [Browse all GitHub Releases](https://github.com/ShubhamGharat07/Aura-Music/releases)
-- **Latest Release:** [Aura Music v2.0.0](https://github.com/ShubhamGharat07/Aura-Music/releases/latest)
+
+### Available Downloads
+
+| Asset | Target Architecture | Description |
+| --- | --- | --- |
+| `app-arm64-v8a-release.apk` | `arm64-v8a` | **Recommended** for modern ARM Android phones (~25.5 MB) |
+| `app-armeabi-v7a-release.apk` | `armeabi-v7a` | Older 32-bit ARM Android devices (~23.5 MB) |
+| `app-x86_64-release.apk` | `x86_64` | x86_64 Android devices and emulators (~27.1 MB) |
+| `update.json` | Manifest | In-app OTA update verification manifest |
 
 ### Publishing a new version
 
-1. Build the universal APK using Flutter.
-2. Locate the generated `app-release.apk` file.
-3. Create a new GitHub Release with an appropriate version tag, such as `v2.1.0`.
-4. Upload the APK to the release assets.
-5. Keep the uploaded APK filename exactly `app-release.apk`.
-6. Publish the release and make sure it is marked as the latest release.
+1. Build signed split APKs:
+   ```bash
+   AURA_REQUIRE_RELEASE_SIGNING=true flutter build apk --release --split-per-abi
+   ```
+2. Generate the matching `update.json` containing the exact file sizes, SHA-256 digests, and version codes for each APK.
+3. Create a new GitHub Release with the matching version tag (e.g. `v2.0.1`).
+4. Upload all three signed APKs and `update.json` to the release assets.
+5. Publish the release and verify it is marked as the latest release.
 
-**Important:** The direct download button depends on the exact asset filename `app-release.apk`. Keep this filename consistent across releases so the same download URL automatically points to the latest published APK.
-
-Previous releases and their APK files remain available in the GitHub Releases archive. Do not delete older releases when publishing a new version.
+Previous releases and their APK files remain available in the GitHub Releases archive. Do not delete or overwrite older releases when publishing a new version.
 
 ## Roadmap
 
 These are future improvements, not shipped features:
 
 - [ ] Keep GitHub Releases updated with new APK versions
-- [ ] Configure proper release signing and replace placeholder app/package IDs
+- [ ] Choose the permanent Android application ID and provision the public release keystore
 - [ ] Stabilize download pause, resume, and retry
 - [ ] Add equalizer / DSP controls
 - [ ] Add backup and restore
@@ -192,7 +215,7 @@ These are future improvements, not shipped features:
 <details>
 <summary><strong>Known limitations</strong></summary>
 
-- Release builds currently use debug signing, and the application ID is still `com.example.aura_music`.
+- Local builds without a release keystore use debug signing. The Android application ID is `app.auramusic.player`.
 - Download pause/resume/retry is not reliable yet.
 - Party mode is experimental and hardware-dependent; it syncs a queue over BLE but does not stream audio.
 - The iOS runner is present but unverified and missing some production configuration.

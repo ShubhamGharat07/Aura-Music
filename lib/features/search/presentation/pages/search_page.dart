@@ -3,9 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
-import 'package:aura_music/core/constants/app_constants.dart';
 import 'package:aura_music/core/di/injection.dart';
-import 'package:aura_music/core/hooks/use_debounced_value.dart';
 import 'package:aura_music/core/responsive/max_content_width.dart';
 import 'package:aura_music/core/responsive/responsive_insets.dart';
 import 'package:aura_music/core/responsive/window_size_class.dart';
@@ -32,6 +30,7 @@ final class SearchPage extends HookWidget {
   @override
   Widget build(BuildContext context) {
     final controller = useTextEditingController();
+    final focusNode = useFocusNode();
     final bloc = useMemoized(() => getIt<SearchBloc>(), const []);
     useEffect(() {
       bloc.add(const SearchRecentRequested());
@@ -64,10 +63,12 @@ final class SearchPage extends HookWidget {
                 style: AppTypography.caption.copyWith(fontSize: 14.sp),
               ),
               SizedBox(height: 22.w),
-              _SearchField(controller: controller),
+              _SearchField(controller: controller, focusNode: focusNode),
               SizedBox(height: 16.w),
               Expanded(
-                child: _KeyboardInset(child: _Body(controller: controller)),
+                child: _KeyboardInset(
+                  child: _Body(controller: controller, focusNode: focusNode),
+                ),
               ),
             ],
           ),
@@ -95,27 +96,18 @@ final class _KeyboardInset extends StatelessWidget {
   }
 }
 
-// Owns the keystroke-level rebuilds (listenable controller + debounce) so the
-// results body below is not rebuilt on every character typed.
+// Keeps text and focus feedback local to the field.
 final class _SearchField extends HookWidget {
-  const _SearchField({required this.controller});
+  const _SearchField({required this.controller, required this.focusNode});
 
   final TextEditingController controller;
+  final FocusNode focusNode;
 
   @override
   Widget build(BuildContext context) {
     useListenable(controller);
-    final focusNode = useFocusNode();
     useListenable(focusNode);
     final bloc = context.read<SearchBloc>();
-    final query = useDebouncedValue(
-      controller.text,
-      AppConstants.searchDebounce,
-    );
-    useEffect(() {
-      bloc.add(SearchQueryChanged(query));
-      return null;
-    }, [query, bloc]);
     final focused = focusNode.hasFocus;
     return SearchBar(
       controller: controller,
@@ -171,6 +163,7 @@ final class _SearchField extends HookWidget {
               ),
             ],
       onTapOutside: (_) => focusNode.unfocus(),
+      onChanged: (value) => bloc.add(SearchQueryChanged(value)),
       onSubmitted: (value) {
         focusNode.unfocus();
         bloc.add(SearchSubmitted(value));
@@ -180,23 +173,39 @@ final class _SearchField extends HookWidget {
 }
 
 final class _Body extends StatelessWidget {
-  const _Body({required this.controller});
+  const _Body({required this.controller, required this.focusNode});
 
   final TextEditingController controller;
+  final FocusNode focusNode;
 
-  void _submit(BuildContext context, String term) {
+  void _setQuery(String term) {
     // Keep the caret at the end; assigning `.text` leaves it unset, so the
     // next typed character would land at the start of the query.
     controller.value = TextEditingValue(
       text: term,
       selection: TextSelection.collapsed(offset: term.length),
     );
+  }
+
+  void _submit(BuildContext context, String term) {
+    _setQuery(term);
+    focusNode.unfocus();
     context.read<SearchBloc>().add(SearchSubmitted(term));
+  }
+
+  void _fill(BuildContext context, String term) {
+    _setQuery(term);
+    focusNode.requestFocus();
+    context.read<SearchBloc>().add(SearchQueryChanged(term));
   }
 
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<SearchBloc, SearchState>(
+      buildWhen: (previous, current) =>
+          previous.status != SearchStatus.suggesting ||
+          current.status != SearchStatus.suggesting ||
+          !identical(previous.suggestions, current.suggestions),
       builder: (context, state) {
         switch (state.status) {
           case SearchStatus.idle:
@@ -217,8 +226,10 @@ final class _Body extends StatelessWidget {
             );
           case SearchStatus.suggesting:
             return SearchSuggestionsView(
+              key: ValueKey(state.query),
               suggestions: state.suggestions,
               onSelect: (term) => _submit(context, term),
+              onFill: (term) => _fill(context, term),
             );
           case SearchStatus.loading:
             return const StateView(

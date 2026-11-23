@@ -5,6 +5,7 @@ import 'package:aura_music/features/catalog/data/datasources/jiosaavn_remote_dat
 import 'package:aura_music/features/home/data/repositories/home_repository_impl.dart';
 import 'package:aura_music/features/home/domain/repositories/home_repository.dart';
 import 'package:aura_music/features/home/domain/usecases/get_artist_radio.dart';
+import 'package:aura_music/features/home/domain/usecases/get_editorial_playlists.dart';
 import 'package:aura_music/features/home/domain/usecases/get_genre_tracks.dart';
 import 'package:aura_music/features/home/domain/usecases/get_home_genres.dart';
 import 'package:aura_music/features/home/domain/usecases/get_home_trending.dart';
@@ -12,10 +13,16 @@ import 'package:aura_music/features/home/domain/usecases/get_language_tracks.dar
 import 'package:aura_music/features/home/domain/usecases/get_new_albums.dart';
 import 'package:aura_music/features/home/domain/usecases/get_new_releases.dart';
 import 'package:aura_music/features/home/domain/usecases/get_popular_artists.dart';
+import 'package:aura_music/features/home/domain/usecases/get_top_charts.dart';
 import 'package:aura_music/features/home/domain/usecases/get_trending_albums.dart';
 import 'package:aura_music/features/home/presentation/bloc/albums_cubit.dart';
 import 'package:aura_music/features/home/presentation/bloc/home_bloc.dart';
 import 'package:aura_music/features/library/domain/usecases/watch_history.dart';
+import 'package:aura_music/features/podcast/data/repositories/podcast_repository_impl.dart';
+import 'package:aura_music/features/podcast/domain/repositories/podcast_repository.dart';
+import 'package:aura_music/features/podcast/domain/usecases/get_podcast_episodes.dart';
+import 'package:aura_music/features/podcast/domain/usecases/get_top_podcasts.dart';
+import 'package:aura_music/features/podcast/presentation/bloc/podcast_cubit.dart';
 
 /// Home feature registrations (PRD S03), kept out of [configureDependencies]
 /// so the locator file stays small.
@@ -55,6 +62,24 @@ void registerHomeDependencies(GetIt getIt) {
   getIt.registerLazySingleton<GetPopularArtists>(
     () => GetPopularArtists(getIt<HomeRepository>()),
   );
+  getIt.registerLazySingleton<GetTopCharts>(
+    () => GetTopCharts(getIt<HomeRepository>()),
+  );
+  getIt.registerLazySingleton<GetEditorialPlaylists>(
+    () => GetEditorialPlaylists(getIt<HomeRepository>()),
+  );
+  getIt.registerLazySingleton<PodcastRepository>(
+    () => PodcastRepositoryImpl(getIt<JiosaavnRemoteDataSource>()),
+  );
+  getIt.registerLazySingleton<GetTopPodcasts>(
+    () => GetTopPodcasts(getIt<PodcastRepository>()),
+  );
+  getIt.registerLazySingleton<GetPodcastEpisodes>(
+    () => GetPodcastEpisodes(getIt<PodcastRepository>()),
+  );
+  getIt.registerFactory<PodcastCubit>(
+    () => PodcastCubit(getIt<GetPodcastEpisodes>()),
+  );
   getIt.registerFactory<HomeBloc>(
     () => HomeBloc(
       getIt<GetHomeTrending>(),
@@ -67,6 +92,9 @@ void registerHomeDependencies(GetIt getIt) {
       getIt<GetTrendingAlbums>(),
       getIt<GetPopularArtists>(),
       getIt<WatchHistory>(),
+      getTopPodcasts: getIt<GetTopPodcasts>(),
+      getTopCharts: getIt<GetTopCharts>(),
+      getEditorialPlaylists: getIt<GetEditorialPlaylists>(),
     ),
   );
   getIt.registerFactory<AlbumsCubit>(

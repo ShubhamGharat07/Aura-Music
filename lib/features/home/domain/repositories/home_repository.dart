@@ -5,7 +5,9 @@ import 'package:aura_music/features/catalog/domain/entities/album.dart';
 import 'package:aura_music/features/catalog/domain/entities/artist.dart';
 import 'package:aura_music/features/catalog/domain/entities/catalog_language.dart';
 import 'package:aura_music/features/catalog/domain/entities/genre.dart';
+import 'package:aura_music/features/catalog/domain/entities/playlist.dart';
 import 'package:aura_music/features/player/domain/entities/track.dart';
+import 'package:aura_music/features/podcast/domain/entities/podcast_show.dart';
 
 /// Home feed sections (PRD S03). Each section is fetched on its own so the
 /// UI can load them independently. Composed over the JioSaavn catalog.
@@ -41,4 +43,13 @@ abstract interface class HomeRepository {
 
   /// Popular artists for the home artist row.
   Future<Either<Failure, List<Artist>>> popularArtists({int limit});
+
+  /// Top / trending podcasts for the home podcast row.
+  Future<Either<Failure, List<PodcastShow>>> topPodcasts({int limit});
+
+  /// Editorial chart playlists ("Top Charts").
+  Future<Either<Failure, List<Playlist>>> charts({int limit});
+
+  /// Editorially curated playlists ("Editor's Picks").
+  Future<Either<Failure, List<Playlist>>> editorialPlaylists({int limit});
 }

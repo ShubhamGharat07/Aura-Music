@@ -22,6 +22,22 @@ abstract final class DesEcb {
   static Uint8List encryptBytes(Uint8List input, Uint8List key) =>
       _crypt(input, key, decrypt: false);
 
+  /// Encrypts [plainText] with the UTF-8 [keyUtf8], applies PKCS#5 padding and
+  /// returns the result as base64 (exposed for round-trip tests).
+  static String encryptStringToBase64(String plainText, String keyUtf8) {
+    final key = Uint8List.fromList(utf8.encode(keyUtf8));
+    final padded = _pad(Uint8List.fromList(utf8.encode(plainText)));
+    return base64.encode(_crypt(padded, key, decrypt: false));
+  }
+
+  static Uint8List _pad(Uint8List input) {
+    final pad = _blockSize - input.length % _blockSize;
+    final out = Uint8List(input.length + pad)
+      ..setRange(0, input.length, input)
+      ..fillRange(input.length, input.length + pad, pad);
+    return out;
+  }
+
   /// Base64-decodes [cipherBase64], decrypts it with the UTF-8 [keyUtf8],
   /// strips PKCS#5 padding and returns the trimmed UTF-8 text (empty on
   /// malformed input).

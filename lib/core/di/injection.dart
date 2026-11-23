@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
@@ -5,6 +7,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:get_it/get_it.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'package:aura_music/core/constants/app_constants.dart';
 import 'package:aura_music/core/data/persistent_cache.dart';
 import 'package:aura_music/core/di/modules/home_module.dart';
 import 'package:aura_music/core/di/modules/party_module.dart';
@@ -13,15 +16,18 @@ import 'package:aura_music/core/di/modules/search_module.dart';
 import 'package:aura_music/core/di/modules/security_module.dart';
 import 'package:aura_music/core/network/dio_client.dart';
 import 'package:aura_music/core/services/app_notification_service.dart';
+import 'package:aura_music/core/services/audio_cache_service.dart';
 import 'package:aura_music/core/services/audio_session_service.dart';
 import 'package:aura_music/core/services/connectivity_cubit.dart';
 import 'package:aura_music/core/services/device_tier_service.dart';
 import 'package:aura_music/core/services/dynamic_accent_service.dart';
+import 'package:aura_music/core/services/installer_service.dart';
 import 'package:aura_music/core/services/permission_service.dart';
 import 'package:aura_music/core/services/playback/just_audio_playback_controller.dart';
 import 'package:aura_music/core/services/playback/media_session_service.dart';
 import 'package:aura_music/core/services/playback/playback_controller.dart';
 import 'package:aura_music/core/services/secure_key_service.dart';
+import 'package:aura_music/core/services/update_downloads.dart';
 import 'package:aura_music/core/services/update_service.dart';
 import 'package:aura_music/database/app_database.dart';
 import 'package:aura_music/database/daos/api_cache_dao.dart';
@@ -125,7 +131,20 @@ Future<void> configureDependencies() async {
   getIt.registerLazySingleton<PermissionService>(
     () => const PermissionService(),
   );
-  getIt.registerLazySingleton<UpdateService>(() => UpdateService(Dio()));
+  getIt.registerLazySingleton<InstallerService>(() => const InstallerService());
+  getIt.registerLazySingleton<UpdateDownloads>(
+    () => UpdateDownloads(
+      getIt<InstallerService>(),
+      openUpdates: getIt<AppNotificationService>().openUpdates,
+    ),
+  );
+  getIt.registerLazySingleton<UpdateService>(
+    () => UpdateService(
+      Dio(BaseOptions(connectTimeout: AppConstants.shortTimeout)),
+      notifications: getIt<AppNotificationService>(),
+      prefs: getIt<SharedPreferences>(),
+    ),
+  );
   getIt.registerLazySingleton<Connectivity>(() => Connectivity());
   getIt.registerLazySingleton<Dio>(
     () => createDioClient(baseUrl: 'https://lrclib.net'),
@@ -332,10 +351,34 @@ Future<void> configureDependencies() async {
   getIt.registerLazySingleton<AppNotificationService>(
     () => AppNotificationService(FlutterLocalNotificationsPlugin()),
   );
+  getIt.registerLazySingleton<AudioCacheService>(
+    () => AudioCacheService(createDownloadDio()),
+  );
   getIt.registerLazySingleton<PlaybackController>(
     () => JustAudioPlaybackController(
-      localFileResolver: (trackId) async =>
-          (await getIt<GetDownloadedFile>()(trackId)).getOrElse((_) => null),
+      localFileResolver: (trackId) async {
+        final downloaded = (await getIt<GetDownloadedFile>()(
+          trackId,
+        )).getOrElse((_) => null);
+        if (downloaded != null) return downloaded;
+        final settings = getIt<SettingsCubit>().state.settings;
+        if (settings.smartAudioCache) {
+          return await getIt<AudioCacheService>().get(trackId);
+        }
+        return null;
+      },
+      onNetworkStreamStarted: (track, url) {
+        final settings = getIt<SettingsCubit>().state.settings;
+        if (settings.smartAudioCache) {
+          unawaited(
+            getIt<AudioCacheService>().cacheTrack(
+              track,
+              streamUrl: url,
+              maxMb: settings.maxCacheSizeMb,
+            ),
+          );
+        }
+      },
     ),
   );
   getIt.registerLazySingleton<SleepTimerService>(

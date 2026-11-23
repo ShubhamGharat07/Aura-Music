@@ -87,16 +87,20 @@ final class _Grid extends StatelessWidget {
                   availableWidth: constraints.crossAxisExtent - inset * 2,
                   targetCardWidth: 150,
                 ),
-                delegate: SliverChildBuilderDelegate(
-                  (context, i) => MediaCard(
-                    title: albums[i].title,
-                    subtitle: albums[i].cardSubtitle,
-                    artUrl: albums[i].artUrl,
-                    onTap: () =>
-                        context.push('${AppRoutes.album}/${albums[i].id}'),
-                  ),
-                  childCount: albums.length,
-                ),
+                delegate: SliverChildBuilderDelegate((context, i) {
+                  final item = albums[i];
+                  final tag = ('albums-page', item.id, i);
+                  return MediaCard(
+                    heroTag: tag,
+                    title: item.title,
+                    subtitle: item.cardSubtitle,
+                    artUrl: item.artUrl,
+                    onTap: () => context.push(
+                      '${AppRoutes.album}/${item.id}',
+                      extra: (item, tag),
+                    ),
+                  );
+                }, childCount: albums.length),
               ),
             ),
           ),

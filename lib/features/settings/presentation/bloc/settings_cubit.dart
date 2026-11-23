@@ -92,6 +92,67 @@ final class SettingsCubit extends Cubit<SettingsState> {
     await _persist(next);
   }
 
+  /// Toggles audio normalization (-14 LUFS level).
+  Future<void> setAudioNormalization(bool value) async {
+    final next = state.settings.copyWith(audioNormalization: value);
+    emit(state.copyWith(settings: next));
+    await _persist(next);
+  }
+
+  /// Toggles the hardware equalizer.
+  Future<void> setEqualizerEnabled(bool value) async {
+    final next = state.settings.copyWith(equalizerEnabled: value);
+    emit(state.copyWith(settings: next));
+    await _persist(next);
+  }
+
+  /// Sets an EQ preset and applies standard band curves.
+  Future<void> setEqualizerPreset(String preset) async {
+    final bands = switch (preset) {
+      'bass_boost' => const <double>[5.0, 3.5, 0.0, 0.0, -1.0],
+      'vocal_boost' => const <double>[-2.0, 1.0, 4.0, 2.5, 0.0],
+      'rock' => const <double>[4.0, 2.0, -1.0, 2.0, 3.5],
+      'electronic' => const <double>[4.5, 2.5, 0.0, 2.0, 3.5],
+      'flat' || _ => const <double>[0.0, 0.0, 0.0, 0.0, 0.0],
+    };
+    final next = state.settings.copyWith(
+      equalizerPreset: preset,
+      equalizerBands: bands,
+    );
+    emit(state.copyWith(settings: next));
+    await _persist(next);
+  }
+
+  /// Sets an individual band gain (-12.0 to +12.0 dB) and marks preset as 'custom'.
+  Future<void> setEqualizerBandGain(int bandIndex, double gain) async {
+    if (bandIndex < 0 || bandIndex >= 5) return;
+    final current = List<double>.from(state.settings.equalizerBands);
+    while (current.length < 5) {
+      current.add(0.0);
+    }
+    current[bandIndex] = gain.clamp(-12.0, 12.0);
+    final next = state.settings.copyWith(
+      equalizerPreset: 'custom',
+      equalizerBands: current,
+    );
+    emit(state.copyWith(settings: next));
+    await _persist(next);
+  }
+
+  /// Toggles automatic smart audio caching.
+  Future<void> setSmartAudioCache(bool value) async {
+    final next = state.settings.copyWith(smartAudioCache: value);
+    emit(state.copyWith(settings: next));
+    await _persist(next);
+  }
+
+  /// Sets maximum disk cache size in megabytes.
+  Future<void> setMaxCacheSizeMb(int mb) async {
+    final next = state.settings.copyWith(maxCacheSizeMb: mb);
+    emit(state.copyWith(settings: next));
+    await _persist(next);
+  }
+
   /// Writes are serialised so rapid tapping can never persist an older value
   /// after a newer one.
   Future<void> _persist(AppSettings next) {

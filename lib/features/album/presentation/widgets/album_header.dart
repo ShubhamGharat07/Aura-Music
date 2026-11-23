@@ -4,6 +4,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import 'package:aura_music/core/theme/tokens.dart';
 import 'package:aura_music/core/theme/typography.dart';
+import 'package:aura_music/core/ui/aura_hero.dart';
 import 'package:aura_music/features/catalog/domain/entities/album.dart';
 
 /// Album hero header (PRD S09): artwork, title, meta and Play all.
@@ -14,6 +15,7 @@ final class AlbumHeader extends StatelessWidget {
   const AlbumHeader({
     super.key,
     required this.album,
+    this.heroTag,
     required this.songCount,
     this.onPlayAll,
   });
@@ -22,10 +24,13 @@ final class AlbumHeader extends StatelessWidget {
   final Album album;
 
   /// Number of songs.
-  final int songCount;
+  final int? songCount;
 
   /// Plays the album from the top.
   final VoidCallback? onPlayAll;
+
+  /// Artwork tag from the card that opened the detail route.
+  final Object? heroTag;
 
   @override
   Widget build(BuildContext context) {
@@ -33,10 +38,14 @@ final class AlbumHeader extends StatelessWidget {
       builder: (context, constraints) {
         final compact = constraints.maxWidth < 500;
         final art = compact ? 140.0 : 200.0;
-        final artWidget = ClipRRect(
+        final cover = ClipRRect(
           borderRadius: BorderRadius.circular(AppRadius.card),
           child: SizedBox(width: art, height: art, child: _art()),
         );
+        final tag = heroTag;
+        final artWidget = tag == null
+            ? cover
+            : AuraHero(tag: tag, child: cover);
         final info = Column(
           crossAxisAlignment: compact
               ? CrossAxisAlignment.center
@@ -89,7 +98,7 @@ final class AlbumHeader extends StatelessWidget {
   String _meta() => [
     album.artist,
     if (album.year != null) '${album.year}',
-    '$songCount songs',
+    if (songCount != null) '$songCount songs',
   ].join(' · ');
 
   Widget _art() {

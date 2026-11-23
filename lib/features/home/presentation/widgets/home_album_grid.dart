@@ -105,15 +105,25 @@ final class HomeAlbumGrid extends StatelessWidget {
           itemCount: skeleton
               ? delegate.crossAxisCount * maxRows
               : albums.length,
-          itemBuilder: (context, i) => skeleton
-              ? Skeleton(borderRadius: BorderRadius.circular(AppRadius.art))
-              : MediaCard(
-                  title: albums[i].title,
-                  subtitle: albums[i].cardSubtitle,
-                  artUrl: albums[i].artUrl,
-                  onTap: () =>
-                      context.push('${AppRoutes.album}/${albums[i].id}'),
-                ),
+          itemBuilder: (context, i) {
+            if (skeleton) {
+              return Skeleton(
+                borderRadius: BorderRadius.circular(AppRadius.art),
+              );
+            }
+            final album = albums[i];
+            final tag = ('home-album', title, album.id, i);
+            return MediaCard(
+              title: album.title,
+              subtitle: album.cardSubtitle,
+              artUrl: album.artUrl,
+              heroTag: tag,
+              onTap: () => context.push(
+                '${AppRoutes.album}/${album.id}',
+                extra: (album, tag),
+              ),
+            );
+          },
         );
       },
     ),

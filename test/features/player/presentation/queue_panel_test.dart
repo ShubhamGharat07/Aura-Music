@@ -98,4 +98,35 @@ void main() {
     expect(find.text('Nothing up next.'), findsOneWidget);
     expect(find.text('1 in queue'), findsOneWidget);
   });
+
+  testWidgets('reorders an up-next row using drag handle', (tester) async {
+    int? from;
+    int? to;
+    await pumpApp(
+      tester,
+      QueuePanel(
+        queue: tracks,
+        currentIndex: 0,
+        accent: Colors.teal,
+        onReorder: (oldIdx, newIdx) {
+          from = oldIdx;
+          to = newIdx;
+        },
+      ),
+    );
+
+    final handles = find.byIcon(Icons.drag_handle);
+    final first = tester.getCenter(handles.first);
+    final second = tester.getCenter(handles.at(1));
+    final gesture = await tester.startGesture(first);
+    await gesture.moveBy(const Offset(0, 25));
+    await tester.pump();
+    await gesture.moveTo(Offset.lerp(first, second, 0.75)!);
+    await tester.pump(const Duration(milliseconds: 250));
+    await gesture.up();
+    await tester.pumpAndSettle();
+
+    expect(from, 1);
+    expect(to, 2);
+  });
 }

@@ -3,11 +3,8 @@ import 'package:flutter_hooks/flutter_hooks.dart';
 
 import 'package:aura_music/core/theme/tokens.dart';
 
-/// Cross-fades the four tab stacks when the bottom navigation changes branch
-/// (PRD 8.2 motion). Every branch stays mounted, so scroll positions, search
-/// text and Cubits survive tab switches; only the active branch paints, which
-/// keeps hidden tabs off the raster thread (0-jank budget).
-final class AnimatedBranchStack extends StatelessWidget {
+/// Slides and fades tab navigators without discarding their route stacks.
+final class AnimatedBranchStack extends HookWidget {
   /// Creates the animated branch container.
   const AnimatedBranchStack({
     super.key,
@@ -16,20 +13,20 @@ final class AnimatedBranchStack extends StatelessWidget {
     this.duration = AppDurations.medium,
   }) : assert(children.length > 0, 'At least one branch is required.');
 
-  /// Active branch index ([StatefulNavigationShell.currentIndex]).
+  /// Active branch index.
   final int currentIndex;
 
   /// Branch navigators, in branch order.
   final List<Widget> children;
 
-  /// Fade/slide duration; the token keeps tab changes in the 220 ms band.
+  /// Fade and slide duration.
   final Duration duration;
 
   @override
   Widget build(BuildContext context) {
-    final reduceMotion =
-        MediaQuery.maybeOf(context)?.disableAnimations ?? false;
-    final effective = reduceMotion ? Duration.zero : duration;
+    final previousIndex = usePrevious(currentIndex) ?? currentIndex;
+    final direction = currentIndex >= previousIndex ? 1 : -1;
+    final instant = MediaQuery.maybeDisableAnimationsOf(context) ?? false;
     return Stack(
       fit: StackFit.expand,
       children: [
@@ -37,7 +34,8 @@ final class AnimatedBranchStack extends StatelessWidget {
           _Branch(
             key: ValueKey<int>(i),
             active: i == currentIndex,
-            duration: effective,
+            travel: 0.05 * direction,
+            duration: instant ? Duration.zero : duration,
             child: children[i],
           ),
       ],
@@ -49,59 +47,67 @@ final class _Branch extends HookWidget {
   const _Branch({
     super.key,
     required this.active,
+    required this.travel,
     required this.duration,
     required this.child,
   });
 
   final bool active;
+  final double travel;
   final Duration duration;
   final Widget child;
 
   @override
   Widget build(BuildContext context) {
-    final controller = useAnimationController(
-      duration: duration,
-      initialValue: active ? 1 : 0,
-    );
-    final hidden = useState(!active);
+    final controller = useAnimationController(initialValue: 1);
+    final opacity = useRef(Tween<double>(begin: 0, end: active ? 1 : 0));
+    final offset = useRef(Tween<Offset>(begin: Offset.zero, end: Offset.zero));
 
     useEffect(() {
-      void onStatus(AnimationStatus status) {
-        if (status == AnimationStatus.dismissed && !active) {
-          hidden.value = true;
-        }
+      final target = active ? 1.0 : 0.0;
+      if (duration == Duration.zero) {
+        opacity.value = Tween(begin: target, end: target);
+        offset.value = Tween(begin: Offset.zero, end: Offset.zero);
+        controller.value = 1;
+      } else if (opacity.value.end != target) {
+        final fromOpacity = opacity.value.evaluate(controller);
+        final fromOffset = fromOpacity == 0 && active
+            ? Offset(travel, 0)
+            : offset.value.evaluate(controller);
+        opacity.value = Tween(begin: fromOpacity, end: target);
+        offset.value = Tween(
+          begin: fromOffset,
+          end: active ? Offset.zero : Offset(-travel, 0),
+        );
+        controller.value = 0;
+        controller.animateTo(1, duration: duration, curve: AppCurves.inOut);
       }
+      return null;
+    }, [active, duration]);
 
-      controller.addStatusListener(onStatus);
-      if (active) {
-        hidden.value = false;
-        controller.animateTo(1, curve: Curves.easeOutCubic);
-      } else {
-        controller.animateTo(0, curve: Curves.easeOutCubic);
-      }
-      return () => controller.removeStatusListener(onStatus);
-    }, [active]);
-
-    final curved = CurvedAnimation(
-      parent: controller,
-      curve: Curves.easeOutCubic,
-    );
-    final rise = Tween<Offset>(
-      begin: const Offset(0, 0.012),
-      end: Offset.zero,
-    ).animate(curved);
-
-    return Offstage(
-      offstage: !active && hidden.value,
-      child: TickerMode(
-        // Keep ticking while fading out so the exit animation can reach
-        // `dismissed` and park the branch offstage.
-        enabled: active || !hidden.value,
-        child: IgnorePointer(
-          ignoring: !active,
-          child: FadeTransition(
-            opacity: curved,
-            child: SlideTransition(position: rise, child: child),
+    return AnimatedBuilder(
+      animation: controller,
+      child: ExcludeFocus(
+        excluding: !active,
+        child: ExcludeSemantics(
+          excluding: !active,
+          child: IgnorePointer(
+            ignoring: !active,
+            child: TickerMode(
+              enabled: active,
+              child: HeroMode(enabled: active, child: child),
+            ),
+          ),
+        ),
+      ),
+      builder: (context, child) => Offstage(
+        offstage: !active && controller.isCompleted,
+        child: FadeTransition(
+          opacity: opacity.value.animate(controller),
+          child: SlideTransition(
+            position: offset.value.animate(controller),
+            textDirection: Directionality.of(context),
+            child: child,
           ),
         ),
       ),

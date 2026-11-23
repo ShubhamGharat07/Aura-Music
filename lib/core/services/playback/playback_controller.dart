@@ -1,4 +1,4 @@
-﻿import 'package:flutter/foundation.dart';
+import 'package:flutter/foundation.dart';
 
 import 'package:aura_music/features/player/domain/entities/playback_status.dart';
 import 'package:aura_music/features/player/domain/entities/track.dart';
@@ -60,6 +60,18 @@ abstract class PlaybackController {
 
   /// Enables / disables skipping silent passages.
   Future<void> setSkipSilence(bool enabled);
+
+  /// Enables / disables audio loudness normalization (-14 LUFS level).
+  Future<void> setAudioNormalization(bool enabled);
+
+  /// Enables / disables the hardware equalizer.
+  Future<void> setEqualizerEnabled(bool enabled);
+
+  /// Sets gain in decibels (-12.0 to +12.0 dB) for a specific frequency band.
+  Future<void> setEqualizerBandGain(int bandIndex, double gain);
+
+  /// Sets EQ band gains for all 5 bands at once.
+  Future<void> setEqualizerBands(List<double> bands);
 
   /// Releases resources.
   Future<void> dispose();

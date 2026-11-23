@@ -47,10 +47,14 @@ final class ArtistCubit extends Cubit<ArtistState> {
 
   final GetArtist _getArtist;
 
+  int _request = 0;
+
   /// Loads (or reloads) the artist for [id].
   Future<void> load(String id) async {
+    final request = ++_request;
     emit(const ArtistState());
     final result = await _getArtist(id);
+    if (isClosed || request != _request) return;
     result.fold(
       (failure) =>
           emit(ArtistState(status: ArtistStatus.error, error: failure.message)),

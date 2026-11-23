@@ -1,12 +1,15 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import 'package:aura_music/core/services/device_tier_service.dart';
 import 'package:aura_music/core/theme/tokens.dart';
 import 'package:aura_music/core/theme/typography.dart';
+import 'package:aura_music/core/ui/animated_play_pause_icon.dart';
+import 'package:aura_music/core/ui/aura_hero.dart';
 import 'package:aura_music/core/ui/glass_surface.dart';
 import 'package:aura_music/core/ui/seek_bar.dart';
 
@@ -22,6 +25,7 @@ final class PlayerBar extends HookWidget {
     this.title,
     this.subtitle,
     this.artUrl,
+    this.heroTag,
     this.isPlaying = false,
     this.busy = false,
     this.onPlayPause,
@@ -46,6 +50,9 @@ final class PlayerBar extends HookWidget {
 
   /// Artwork URL.
   final String? artUrl;
+
+  /// Artwork tag shared with the full player.
+  final Object? heroTag;
 
   /// Whether playback is running.
   final bool isPlaying;
@@ -74,6 +81,8 @@ final class PlayerBar extends HookWidget {
   @override
   Widget build(BuildContext context) {
     final idle = title == null;
+    final art = _Art(url: artUrl);
+    final tag = heroTag;
     return Padding(
       padding: EdgeInsets.all(AppSpacing.md),
       child: GlassSurface(
@@ -85,7 +94,7 @@ final class PlayerBar extends HookWidget {
         ),
         child: Row(
           children: [
-            _Art(url: artUrl),
+            tag == null ? art : AuraHero(tag: tag, child: art),
             SizedBox(width: AppSpacing.md),
             Expanded(
               child: Column(
@@ -195,24 +204,21 @@ final class _Controls extends StatelessWidget {
           onPressed: onPrevious,
           icon: const Icon(Icons.skip_previous),
         ),
-        if (busy)
-          Padding(
-            padding: EdgeInsets.symmetric(horizontal: AppSpacing.md),
-            child: SizedBox(
-              width: 24.w,
-              height: 24.w,
-              child: CircularProgressIndicator(strokeWidth: 2.5),
-            ),
-          )
-        else
-          IconButton(
-            tooltip: isPlaying ? 'Pause' : 'Play',
-            onPressed: onPlayPause,
-            icon: Icon(
-              isPlaying ? Icons.pause_circle_filled : Icons.play_circle_filled,
-              size: 36.r,
-            ),
+        IconButton(
+          tooltip: isPlaying ? 'Pause' : 'Play',
+          onPressed: onPlayPause == null
+              ? null
+              : () {
+                  HapticFeedback.lightImpact();
+                  onPlayPause!();
+                },
+          icon: AnimatedPlayPauseIcon(
+            playing: isPlaying,
+            loading: busy,
+            size: 24,
+            color: Theme.of(context).colorScheme.onSurface,
           ),
+        ),
         IconButton(
           tooltip: 'Next',
           onPressed: onNext,

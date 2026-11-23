@@ -1,4 +1,4 @@
-﻿// Route paths (PRD 6.2). Navigation uses `go_router` only;
+// Route paths (PRD 6.2). Navigation uses `go_router` only;
 // `Navigator.of(context)` is banned outside `core/router`.
 
 /// App route paths.
@@ -26,6 +26,9 @@ abstract final class AppRoutes {
 
   /// Playlist detail (`/playlist/:id`).
   static const String playlist = '/playlist';
+
+  /// Podcast show detail (`/podcast/:id`).
+  static const String podcast = '/podcast';
 
   /// Album grid browse (`/albums/:kind`, "See all" from home).
   static const String albums = '/albums';

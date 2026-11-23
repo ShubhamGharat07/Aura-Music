@@ -26,13 +26,25 @@ final class PlaybackSettingsBinder extends HookWidget {
     final skipSilence = context.select(
       (SettingsCubit cubit) => cubit.state.settings.skipSilence,
     );
+    final audioNormalization = context.select(
+      (SettingsCubit cubit) => cubit.state.settings.audioNormalization,
+    );
+    final equalizerEnabled = context.select(
+      (SettingsCubit cubit) => cubit.state.settings.equalizerEnabled,
+    );
+    final equalizerBands = context.select(
+      (SettingsCubit cubit) => cubit.state.settings.equalizerBands,
+    );
     useEffect(() {
       final controller = _controller();
       if (controller == null) return null;
       unawaited(controller.setSpeed(speed));
       unawaited(controller.setSkipSilence(skipSilence));
+      unawaited(controller.setAudioNormalization(audioNormalization));
+      unawaited(controller.setEqualizerEnabled(equalizerEnabled));
+      unawaited(controller.setEqualizerBands(equalizerBands));
       return null;
-    }, [speed, skipSilence]);
+    }, [speed, skipSilence, audioNormalization, equalizerEnabled, equalizerBands]);
     return child;
   }
 

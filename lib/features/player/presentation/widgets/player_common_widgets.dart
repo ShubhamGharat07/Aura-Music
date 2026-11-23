@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import 'package:aura_music/core/theme/colors.dart';
 import 'package:aura_music/core/theme/tokens.dart';
 import 'package:aura_music/core/theme/typography.dart';
+import 'package:aura_music/features/downloads/presentation/bloc/downloads_cubit.dart';
 import 'package:aura_music/features/player/domain/entities/track.dart';
 import 'package:aura_music/features/player/presentation/widgets/player_action.dart';
 import 'package:aura_music/features/player/presentation/widgets/sleep_timer_action.dart';
@@ -107,6 +110,8 @@ final class TrackInfo extends StatelessWidget {
     final align = centered
         ? CrossAxisAlignment.center
         : CrossAxisAlignment.start;
+    final tap = onLike;
+    final reduceMotion = MediaQuery.disableAnimationsOf(context);
     return Column(
       crossAxisAlignment: align,
       mainAxisSize: MainAxisSize.min,
@@ -129,13 +134,34 @@ final class TrackInfo extends StatelessWidget {
             ),
             SizedBox(width: 4.w),
             IconButton(
-              onPressed: onLike,
+              tooltip: liked ? 'Unlike' : 'Like',
+              onPressed: tap == null
+                  ? null
+                  : () {
+                      HapticFeedback.selectionClick();
+                      tap();
+                    },
               iconSize: 21.r,
               padding: EdgeInsets.zero,
               constraints: BoxConstraints.tightFor(width: 32.w, height: 32.w),
-              color: liked ? accent : AppColors.textSecondary,
-              icon: Icon(
-                liked ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+              icon: AnimatedSwitcher(
+                key: ValueKey(track.id),
+                duration: reduceMotion ? Duration.zero : AppDurations.fast,
+                switchInCurve: AppCurves.out,
+                transitionBuilder: (child, animation) => FadeTransition(
+                  opacity: animation,
+                  child: ScaleTransition(
+                    scale: animation.drive(Tween(begin: 0.88, end: 1.0)),
+                    child: child,
+                  ),
+                ),
+                child: Icon(
+                  liked
+                      ? Icons.favorite_rounded
+                      : Icons.favorite_border_rounded,
+                  key: ValueKey(liked),
+                  color: liked ? accent : AppColors.textSecondary,
+                ),
               ),
             ),
           ],
@@ -166,6 +192,7 @@ final class BottomActions extends StatelessWidget {
     this.onLyrics,
     this.onQueue,
     this.onDownload,
+    this.trackId,
   });
 
   /// Lyrics callback.
@@ -176,6 +203,9 @@ final class BottomActions extends StatelessWidget {
 
   /// Download callback.
   final VoidCallback? onDownload;
+
+  /// Track whose offline availability is displayed by the download action.
+  final String? trackId;
 
   @override
   Widget build(BuildContext context) {
@@ -196,14 +226,43 @@ final class BottomActions extends StatelessWidget {
           ),
         ),
         Expanded(
-          child: PlayerAction(
-            icon: Icons.download_outlined,
-            label: 'Download',
-            onTap: onDownload,
-          ),
+          child: _DownloadAction(trackId: trackId, onTap: onDownload),
         ),
         const Expanded(child: SleepTimerAction()),
       ],
+    );
+  }
+}
+
+final class _DownloadAction extends StatelessWidget {
+  const _DownloadAction({required this.trackId, required this.onTap});
+
+  final String? trackId;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final (icon, label) = context.select<DownloadsCubit?, (IconData, String)>((
+      cubit,
+    ) {
+      final downloads = cubit?.state.downloads ?? const [];
+      for (final download in downloads) {
+        if (download.track.id != trackId) continue;
+        if (download.isComplete) {
+          return (Icons.download_done_rounded, 'Offline');
+        }
+        if (download.isActive) {
+          return (Icons.downloading_rounded, 'Downloading');
+        }
+      }
+      return (Icons.download_outlined, 'Download');
+    });
+    return PlayerAction(
+      key: ValueKey(trackId),
+      icon: icon,
+      label: label,
+      onTap: onTap,
+      animate: true,
     );
   }
 }

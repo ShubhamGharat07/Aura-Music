@@ -18,6 +18,6 @@ final class GetSuggestions implements UseCase<List<Track>, String> {
   Future<Either<Failure, List<Track>>> call(String query) {
     final trimmed = query.trim();
     if (trimmed.isEmpty) return Future.value(const Right(<Track>[]));
-    return _repository.suggestions(trimmed, limit: 8);
+    return _repository.suggestions(trimmed, limit: 6);
   }
 }

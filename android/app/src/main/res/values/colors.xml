@@ -5,5 +5,5 @@
          let the OS's rotation animation show a bright/squeezed frame behind
          the Flutter surface while the new size was being laid out. -->
     <color name="aura_window_background">#FF07080C</color>
-	<color name="ic_launcher_background">#020310</color>
+	<color name="ic_launcher_background">#010101</color>
 </resources>

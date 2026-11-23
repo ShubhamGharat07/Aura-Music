@@ -1,9 +1,19 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     id("kotlin-android")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
 }
+
+val releaseSigning = Properties()
+val signingProperties = rootProject.file("key.properties")
+if (signingProperties.isFile) {
+    signingProperties.inputStream().use { releaseSigning.load(it) }
+}
+val requireReleaseSigning = providers.gradleProperty("requireReleaseSigning").orNull == "true" ||
+    providers.environmentVariable("AURA_REQUIRE_RELEASE_SIGNING").orNull == "true"
 
 android {
     namespace = "com.example.aura_music"
@@ -25,7 +35,7 @@ android {
 
     defaultConfig {
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "com.example.aura_music"
+        applicationId = "app.auramusic.player"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion
@@ -34,11 +44,25 @@ android {
         versionName = flutter.versionName
     }
 
+    signingConfigs {
+        if (signingProperties.isFile) {
+            create("otaRelease") {
+                fun value(key: String): String = requireNotNull(releaseSigning.getProperty(key)) {
+                    "Missing signing setting in android/key.properties: $key"
+                }
+                storeFile = rootProject.file(value("storeFile"))
+                storePassword = value("storePassword")
+                keyAlias = value("keyAlias")
+                keyPassword = value("keyPassword")
+            }
+        }
+    }
+
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.getByName("debug")
+            // Keep local release builds working while signing is configured.
+            signingConfig = signingConfigs.findByName("otaRelease")
+                ?: if (requireReleaseSigning) null else signingConfigs.getByName("debug")
         }
     }
 }
@@ -49,4 +73,13 @@ dependencies {
 
 flutter {
     source = "../.."
+}
+
+// Public-release tooling opts in before building a distributable APK.
+tasks.matching { it.name == "preReleaseBuild" }.configureEach {
+    doFirst {
+        check(!requireReleaseSigning || signingProperties.isFile) {
+            "Public OTA releases require android/key.properties and a stable release keystore."
+        }
+    }
 }

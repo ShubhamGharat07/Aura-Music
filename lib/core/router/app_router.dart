@@ -6,6 +6,8 @@ import 'package:aura_music/core/responsive/tiered_shell.dart';
 import 'package:aura_music/core/router/routes.dart';
 import 'package:aura_music/features/album/presentation/pages/album_page.dart';
 import 'package:aura_music/features/artist/presentation/pages/artist_page.dart';
+import 'package:aura_music/features/catalog/domain/entities/album.dart';
+import 'package:aura_music/features/catalog/domain/entities/artist.dart';
 import 'package:aura_music/features/downloads/presentation/pages/downloads_page.dart';
 import 'package:aura_music/features/library/presentation/pages/history_page.dart';
 import 'package:aura_music/features/library/presentation/pages/library_page.dart';
@@ -14,6 +16,8 @@ import 'package:aura_music/features/library/presentation/pages/playlists_page.da
 import 'package:aura_music/features/library/presentation/pages/user_playlist_page.dart';
 import 'package:aura_music/features/player/presentation/pages/player_page.dart';
 import 'package:aura_music/features/playlist/presentation/pages/playlist_page.dart';
+import 'package:aura_music/features/podcast/domain/entities/podcast_show.dart';
+import 'package:aura_music/features/podcast/presentation/pages/podcast_page.dart';
 import 'package:aura_music/features/search/presentation/pages/search_page.dart';
 import 'package:aura_music/features/security/presentation/pages/privacy_settings_page.dart';
 import 'package:aura_music/features/settings/presentation/pages/about_settings_page.dart';
@@ -147,18 +151,50 @@ GoRouter buildRouter() {
       ),
       GoRoute(
         path: '${AppRoutes.album}/:id',
-        builder: (context, state) =>
-            AlbumPage(albumId: state.pathParameters['id'] ?? ''),
+        builder: (context, state) {
+          final extra = state.extra;
+          final artwork = extra is (Album, Object) ? extra : null;
+          final id = state.pathParameters['id'] ?? '';
+          final item = artwork?.$1;
+          return AlbumPage(
+            albumId: id,
+            initialAlbum: item?.id == id ? item : null,
+            heroTag: item?.id == id ? artwork?.$2 : null,
+          );
+        },
       ),
       GoRoute(
         path: '${AppRoutes.artist}/:id',
-        builder: (context, state) =>
-            ArtistPage(artistId: state.pathParameters['id'] ?? ''),
+        builder: (context, state) {
+          final extra = state.extra;
+          final artwork = extra is (Artist, Object) ? extra : null;
+          final id = state.pathParameters['id'] ?? '';
+          final item = artwork?.$1;
+          return ArtistPage(
+            artistId: id,
+            initialArtist: item?.id == id ? item : null,
+            heroTag: item?.id == id ? artwork?.$2 : null,
+          );
+        },
       ),
       GoRoute(
         path: '${AppRoutes.playlist}/:id',
         builder: (context, state) =>
             PlaylistPage(playlistId: state.pathParameters['id'] ?? ''),
+      ),
+      GoRoute(
+        path: '${AppRoutes.podcast}/:id',
+        builder: (context, state) {
+          final extra = state.extra;
+          final artwork = extra is (PodcastShow, Object) ? extra : null;
+          final id = state.pathParameters['id'] ?? '';
+          final item = artwork?.$1 ?? (extra is PodcastShow ? extra : null);
+          return PodcastPage(
+            showId: id,
+            initialShow: item?.id == id ? item : null,
+            heroTag: item?.id == id ? artwork?.$2 : null,
+          );
+        },
       ),
       GoRoute(
         path: '${AppRoutes.albums}/:kind',

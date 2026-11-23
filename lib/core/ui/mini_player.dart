@@ -1,6 +1,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
@@ -8,6 +9,8 @@ import 'package:aura_music/core/services/device_tier_service.dart';
 import 'package:aura_music/core/theme/colors.dart';
 import 'package:aura_music/core/theme/tokens.dart';
 import 'package:aura_music/core/theme/typography.dart';
+import 'package:aura_music/core/ui/animated_play_pause_icon.dart';
+import 'package:aura_music/core/ui/aura_hero.dart';
 import 'package:aura_music/core/ui/glass_surface.dart';
 import 'package:aura_music/core/utils/color_from_id.dart';
 import 'package:aura_music/features/player/domain/entities/playback_status.dart';
@@ -55,7 +58,11 @@ final class MiniPlayer extends StatelessWidget {
                     padding: EdgeInsets.fromLTRB(10.w, 8.w, 3.w, 8.w),
                     child: Row(
                       children: [
-                        _Art(accent: accent, artUrl: track.artUrl),
+                        _Art(
+                          accent: accent,
+                          artUrl: track.artUrl,
+                          trackId: track.id,
+                        ),
                         SizedBox(width: 12.w),
                         Expanded(
                           child: Column(
@@ -87,40 +94,24 @@ final class MiniPlayer extends StatelessWidget {
                         ),
                         IconButton(
                           tooltip: state.isPlaying ? 'Pause' : 'Play',
-                          onPressed: () =>
-                              bloc.add(const PlayerPlayPauseToggled()),
-                          iconSize: 26.r,
+                          onPressed: () {
+                            HapticFeedback.lightImpact();
+                            bloc.add(const PlayerPlayPauseToggled());
+                          },
                           color: AppColors.textPrimary,
-                          icon: AnimatedSwitcher(
-                            duration: AppDurations.fast,
-                            switchInCurve: AppCurves.out,
-                            switchOutCurve: AppCurves.out,
-                            transitionBuilder: (child, animation) =>
-                                FadeTransition(
-                                  opacity: animation,
-                                  child: ScaleTransition(
-                                    scale: animation.drive(
-                                      Tween<double>(begin: 0.92, end: 1),
-                                    ),
-                                    child: child,
-                                  ),
-                                ),
-                            child: loading
-                                ? SizedBox(
-                                    key: const ValueKey('loading'),
-                                    width: 18.r,
-                                    height: 18.r,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      color: accent,
-                                    ),
-                                  )
-                                : Icon(
-                                    key: ValueKey(state.isPlaying),
-                                    state.isPlaying
-                                        ? Icons.pause_rounded
-                                        : Icons.play_arrow_rounded,
-                                  ),
+                          icon: AnimatedPlayPauseIcon(
+                            playing: state.isPlaying,
+                            loading: loading,
+                            size: 26.r,
+                            color: AppColors.textPrimary,
+                            loadingIndicator: SizedBox(
+                              width: 18.r,
+                              height: 18.r,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: accent,
+                              ),
+                            ),
                           ),
                         ),
                         IconButton(
@@ -224,38 +215,42 @@ final class _MiniProgressPainter extends CustomPainter {
 
 /// Small track art thumbnail (real artwork when available, subtle dark glass box otherwise).
 final class _Art extends StatelessWidget {
-  const _Art({required this.accent, this.artUrl});
+  const _Art({required this.accent, required this.trackId, this.artUrl});
 
   final Color accent;
+  final String trackId;
   final String? artUrl;
 
   @override
   Widget build(BuildContext context) {
     final url = artUrl;
-    return Container(
-      width: 43.r,
-      height: 43.r,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(12.r),
-        border: Border.all(
-          color: Colors.white.withValues(alpha: 0.10),
-          width: 0.7,
+    return AuraHero(
+      tag: 'player-art-$trackId',
+      child: Container(
+        width: 43.r,
+        height: 43.r,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(12.r),
+          border: Border.all(
+            color: Colors.white.withValues(alpha: 0.10),
+            width: 0.7,
+          ),
         ),
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(12.r),
-        child: url == null
-            ? _placeholder()
-            : CachedNetworkImage(
-                imageUrl: url,
-                width: 43.r,
-                height: 43.r,
-                fit: BoxFit.cover,
-                memCacheWidth: 132,
-                memCacheHeight: 132,
-                fadeInDuration: AppDurations.fast,
-                errorWidget: (context, _, _) => _placeholder(),
-              ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(12.r),
+          child: url == null
+              ? _placeholder()
+              : CachedNetworkImage(
+                  imageUrl: url,
+                  width: 43.r,
+                  height: 43.r,
+                  fit: BoxFit.cover,
+                  memCacheWidth: 132,
+                  memCacheHeight: 132,
+                  fadeInDuration: AppDurations.fast,
+                  errorWidget: (context, _, _) => _placeholder(),
+                ),
+        ),
       ),
     );
   }

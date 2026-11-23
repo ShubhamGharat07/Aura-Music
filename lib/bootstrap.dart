@@ -8,6 +8,8 @@ import 'package:aura_music/core/services/device_tier_service.dart';
 import 'package:aura_music/core/services/performance_probe.dart';
 import 'package:aura_music/core/services/playback/media_session_service.dart';
 import 'package:aura_music/core/services/secure_key_service.dart';
+import 'package:aura_music/core/services/update_downloads.dart';
+import 'package:aura_music/core/services/update_service.dart';
 import 'package:aura_music/database/app_database.dart';
 import 'package:aura_music/features/home/domain/usecases/get_home_trending.dart';
 import 'package:aura_music/features/home/domain/usecases/get_new_releases.dart';
@@ -45,5 +47,15 @@ void _warmHomeFeed() {
   WidgetsBinding.instance.addPostFrameCallback((_) {
     unawaited(getIt<GetHomeTrending>().call(20));
     unawaited(getIt<GetNewReleases>().call(20));
+    unawaited(_startUpdater());
   });
+}
+
+Future<void> _startUpdater() async {
+  final service = getIt<UpdateService>();
+  if (!service.supported) return;
+  await Future<void>.delayed(const Duration(seconds: 2));
+  // Background task recovery and update checks are independent.
+  unawaited(getIt<UpdateDownloads>().initialize().catchError((Object _) {}));
+  await service.checkAndNotify();
 }

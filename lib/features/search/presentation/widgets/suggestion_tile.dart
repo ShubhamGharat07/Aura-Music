@@ -41,7 +41,7 @@ final class SuggestionTile extends StatelessWidget {
           color: Colors.transparent,
           child: InkWell(
             onTap: onTap,
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(10.r),
             child: Padding(
               padding: EdgeInsets.symmetric(vertical: 12.w, horizontal: 2.w),
               child: Row(

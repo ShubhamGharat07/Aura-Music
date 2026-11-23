@@ -3,6 +3,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import 'package:aura_music/core/theme/tokens.dart';
 import 'package:aura_music/core/ui/seek_bar.dart';
+import 'package:aura_music/features/player/domain/entities/playback_status.dart';
 import 'package:aura_music/features/player/presentation/bloc/player_bloc.dart';
 import 'package:aura_music/features/player/presentation/bloc/player_event.dart';
 import 'package:aura_music/features/player/presentation/bloc/player_state.dart';
@@ -111,6 +112,8 @@ final class PlayerExpandedLayout extends StatelessWidget {
                       child: PlayerArtwork(
                         accent: accent,
                         artUrl: track.artUrl,
+                        playing: state.isPlaying,
+                        heroTag: 'player-art-${track.id}',
                         onNext: () => bloc.add(const PlayerNextRequested()),
                         onPrevious: () =>
                             bloc.add(const PlayerPreviousRequested()),
@@ -132,6 +135,7 @@ final class PlayerExpandedLayout extends StatelessWidget {
                       duration: controller.duration,
                       buffered: controller.buffered,
                       accent: accent,
+                      isPlaying: state.status == PlaybackStatus.playing,
                       onSeek: (d) => bloc.add(PlayerSeekRequested(d)),
                     ),
                     SizedBox(height: 8.w),
@@ -150,6 +154,7 @@ final class PlayerExpandedLayout extends StatelessWidget {
                     ),
                     Spacer(),
                     BottomActions(
+                      trackId: track.id,
                       onLyrics: onLyrics,
                       onQueue: onQueue,
                       onDownload: onDownload,

@@ -7,6 +7,7 @@ import 'package:aura_music/core/router/routes.dart';
 import 'package:aura_music/core/theme/colors.dart';
 import 'package:aura_music/core/theme/tokens.dart';
 import 'package:aura_music/core/theme/typography.dart';
+import 'package:aura_music/core/ui/aura_hero.dart';
 import 'package:aura_music/core/ui/section_header.dart';
 import 'package:aura_music/core/ui/skeleton.dart';
 import 'package:aura_music/features/catalog/domain/entities/artist.dart';
@@ -104,7 +105,7 @@ final class HomeArtists extends StatelessWidget {
     itemCount: section.artists.length,
     separatorBuilder: (_, _) => SizedBox(width: 14.w),
     itemBuilder: (_, i) =>
-        _ArtistBubble(artist: section.artists[i], size: _bubble),
+        _ArtistBubble(artist: section.artists[i], size: _bubble, index: i),
   );
 
   Widget _error() => Padding(
@@ -125,25 +126,37 @@ final class HomeArtists extends StatelessWidget {
 }
 
 final class _ArtistBubble extends StatelessWidget {
-  const _ArtistBubble({required this.artist, required this.size});
+  const _ArtistBubble({
+    required this.artist,
+    required this.size,
+    required this.index,
+  });
 
   final Artist artist;
   final double size;
+  final int index;
 
   @override
   Widget build(BuildContext context) {
+    final tag = ('home-artist', artist.id, index);
     return SizedBox(
       width: size,
       child: InkWell(
-        onTap: () => context.push('${AppRoutes.artist}/${artist.id}'),
+        onTap: () => context.push(
+          '${AppRoutes.artist}/${artist.id}',
+          extra: (artist, tag),
+        ),
         borderRadius: BorderRadius.circular(size / 2),
         child: Column(
           children: [
-            ClipOval(
-              child: SizedBox(
-                width: HomeArtists._avatar,
-                height: HomeArtists._avatar,
-                child: _portrait(),
+            AuraHero(
+              tag: tag,
+              child: ClipOval(
+                child: SizedBox(
+                  width: HomeArtists._avatar,
+                  height: HomeArtists._avatar,
+                  child: _portrait(),
+                ),
               ),
             ),
             SizedBox(height: 8.w),

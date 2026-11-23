@@ -1,13 +1,15 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fpdart/fpdart.dart';
 
 import 'package:aura_music/core/error/failures.dart';
+import 'package:aura_music/features/catalog/domain/entities/playlist.dart';
 import 'package:aura_music/features/catalog/domain/entities/album.dart';
 import 'package:aura_music/features/catalog/domain/entities/artist.dart';
 import 'package:aura_music/features/catalog/domain/entities/catalog_language.dart';
 import 'package:aura_music/features/catalog/domain/entities/genre.dart';
+import 'package:aura_music/features/podcast/domain/entities/podcast_show.dart';
 import 'package:aura_music/features/downloads/domain/entities/download.dart';
 import 'package:aura_music/features/downloads/domain/repositories/downloads_repository.dart';
 import 'package:aura_music/features/downloads/domain/usecases/download_track.dart';
@@ -63,6 +65,15 @@ final List<Artist> _artists = [
 
 final class _FakeHomeRepository implements HomeRepository {
   @override
+  Future<Either<Failure, List<Playlist>>> charts({int limit = 20}) async =>
+      const Right([]);
+
+  @override
+  Future<Either<Failure, List<Playlist>>> editorialPlaylists({
+    int limit = 20,
+  }) async => const Right([]);
+
+  @override
   Future<Either<Failure, List<Track>>> trending({int limit = 20}) async =>
       Right(_tracks);
 
@@ -104,6 +115,11 @@ final class _FakeHomeRepository implements HomeRepository {
   Future<Either<Failure, List<Artist>>> popularArtists({
     int limit = 20,
   }) async => Right(_artists);
+
+  @override
+  Future<Either<Failure, List<PodcastShow>>> topPodcasts({
+    int limit = 20,
+  }) async => const Right(<PodcastShow>[]);
 }
 
 final class _FakeHistoryRepository implements PlayHistoryRepository {

@@ -1,4 +1,4 @@
-﻿import 'package:drift/drift.dart' show Value;
+import 'package:drift/drift.dart' show Value;
 import 'package:fpdart/fpdart.dart';
 
 import 'package:aura_music/core/error/failures.dart';
@@ -11,22 +11,25 @@ import 'package:aura_music/features/catalog/domain/entities/album.dart';
 import 'package:aura_music/features/catalog/domain/entities/artist.dart';
 import 'package:aura_music/features/catalog/domain/entities/playlist.dart';
 import 'package:aura_music/features/player/domain/entities/track.dart';
+import 'package:aura_music/features/podcast/domain/entities/podcast_show.dart';
 import 'package:aura_music/features/search/domain/entities/search_results.dart';
 import 'package:aura_music/features/search/domain/repositories/search_repository.dart';
 
-/// [SearchRepository] implementation over the shared JioSaavn client. Combines
-/// the four type queries into one [SearchResults]; [guardRemote] maps
+/// [SearchRepository] implementation over the shared JioSaavn client.
+/// Combines the five type queries into one [SearchResults]; [guardRemote] maps
 /// data-layer exceptions at the boundary.
 ///
 /// Offline fallback: successful song results are mirrored into `cached_tracks`,
 /// so when the network is down the same query still returns songs from the last
 /// successful search instead of an empty error screen.
 
-/// Multi-type JioSaavn search with a local fallback.
+/// Multi-type search with a local fallback.
 final class SearchRepositoryImpl implements SearchRepository {
   /// Creates the repository.
-  const SearchRepositoryImpl(this._remote, {CachedTracksDao? cache})
-    : _cache = cache;
+  const SearchRepositoryImpl(
+    this._remote, {
+    CachedTracksDao? cache,
+  }) : _cache = cache;
 
   final JiosaavnRemoteDataSource _remote;
   final CachedTracksDao? _cache;
@@ -36,13 +39,14 @@ final class SearchRepositoryImpl implements SearchRepository {
     final trimmed = query.trim();
     if (trimmed.isEmpty) return const Right(SearchResults());
     final remote = await guardRemote(() async {
-      // The four type queries are independent, so one round trip's worth of
-      // latency covers all of them instead of four sequential waits.
+      // The five type queries are independent, so one round trip's worth of
+      // latency covers all of them instead of sequential waits.
       final responses = await Future.wait(<Future<Object>>[
         _remote.search(trimmed, limit: 30),
         _remote.searchAlbums(trimmed, limit: 20),
         _remote.searchArtists(trimmed, limit: 20),
         _remote.searchPlaylists(trimmed, limit: 20),
+        _remote.searchPodcasts(trimmed, limit: 20),
       ]);
       final songs = responses[0] as List<Track>;
       await _cacheSongs(songs);
@@ -51,6 +55,7 @@ final class SearchRepositoryImpl implements SearchRepository {
         albums: responses[1] as List<Album>,
         artists: responses[2] as List<Artist>,
         playlists: responses[3] as List<Playlist>,
+        podcasts: responses[4] as List<PodcastShow>,
       );
     });
     if (remote.isRight()) return remote;

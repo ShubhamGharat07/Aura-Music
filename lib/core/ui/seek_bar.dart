@@ -4,15 +4,12 @@ import 'package:flutter_hooks/flutter_hooks.dart';
 
 import 'package:aura_music/core/utils/formatters.dart';
 
-/// Seek bar (PRD 4.1 + 8.3). Reads position from a [ValueListenable]
-/// (>=10 Hz) so the whole player does not rebuild. Dragging is ephemeral
-/// UI state handled by hooks, never `setState`.
+/// Clean, responsive seek bar (PRD 4.1 + 8.3).
 ///
-/// The track is a single [CustomPaint] driven by the position notifier and a
-/// drag notifier, so playback progress repaints two small layers instead of
-/// rebuilding a Material [Slider] (and its theme, layout and ink state) every
-/// tick. Buffered progress, which the old slider silently dropped, is painted
-/// between the inactive and active tracks.
+/// Features:
+/// - Smooth straight active, buffered, and inactive tracks.
+/// - Tactile thumb feedback with spring bloom when scrubbing.
+/// - High-performance repaint boundary scoped to progress updates only.
 final class SeekBar extends HookWidget {
   /// Creates a seek bar.
   const SeekBar({
@@ -23,6 +20,8 @@ final class SeekBar extends HookWidget {
     this.onSeek,
     this.showLabels = true,
     this.accent,
+    this.isPlaying = true,
+    this.waveAmplitude = 0.0,
   });
 
   /// Playback position notifier (owned by the player service/BLoC).
@@ -42,6 +41,12 @@ final class SeekBar extends HookWidget {
 
   /// Accent colour (defaults to the theme primary).
   final Color? accent;
+
+  /// Kept for API backwards-compatibility with player layouts.
+  final bool isPlaying;
+
+  /// Kept for API backwards-compatibility.
+  final double waveAmplitude;
 
   @override
   Widget build(BuildContext context) {
@@ -73,8 +78,7 @@ final class SeekBar extends HookWidget {
   }
 }
 
-/// Interactive track + thumb. The drag value is shared with the labels so the
-/// elapsed time follows the finger without rebuilding the track subtree.
+/// Interactive track + thumb with smooth linear progress.
 final class _SeekTrack extends HookWidget {
   const _SeekTrack({
     required this.position,
@@ -96,9 +100,38 @@ final class _SeekTrack extends HookWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Thumb tactile feedback controller (spring-like scale on touch)
+    final thumbScaleController = useAnimationController(
+      duration: const Duration(milliseconds: 180),
+    );
+
+    // Touch/drag feedback effect
+    useEffect(() {
+      void onDrag() {
+        if (drag.value != null) {
+          thumbScaleController.animateTo(1.0, curve: Curves.easeOutCubic);
+        } else {
+          thumbScaleController.animateTo(0.0, curve: Curves.easeOutBack);
+        }
+      }
+
+      drag.addListener(onDrag);
+      return () => drag.removeListener(onDrag);
+    }, [drag]);
+
     final repaint = useMemoized(
-      () => Listenable.merge([position, ?buffered, drag]),
-      [position, buffered, drag],
+      () => Listenable.merge([
+        position,
+        ?buffered,
+        drag,
+        thumbScaleController,
+      ]),
+      [
+        position,
+        buffered,
+        drag,
+        thumbScaleController,
+      ],
     );
 
     void commit(double ratio) {
@@ -156,6 +189,7 @@ final class _SeekTrack extends HookWidget {
                   duration: duration,
                   accent: accent,
                   drag: drag,
+                  thumbScale: thumbScaleController.value,
                   repaint: repaint,
                 ),
                 size: Size(width, 30),
@@ -175,6 +209,7 @@ final class _SeekPainter extends CustomPainter {
     required this.duration,
     required this.accent,
     required this.drag,
+    required this.thumbScale,
     required this.repaint,
   }) : super(repaint: repaint);
 
@@ -183,6 +218,7 @@ final class _SeekPainter extends CustomPainter {
   final Duration duration;
   final Color accent;
   final ValueNotifier<double?> drag;
+  final double thumbScale;
   final Listenable repaint;
 
   @override
@@ -202,7 +238,8 @@ final class _SeekPainter extends CustomPainter {
     final right = size.width - thumbRadius;
     final trackWidth = (right - left).clamp(0.0, double.infinity);
     final cy = size.height / 2;
-    final centerX = left + trackWidth * progress;
+    final progressX = left + trackWidth * progress;
+    final activeWidth = progressX - left;
 
     final background = Paint()
       ..color = Colors.white.withValues(alpha: 0.14)
@@ -214,53 +251,65 @@ final class _SeekPainter extends CustomPainter {
       ..color = accent
       ..style = PaintingStyle.fill;
 
-    final trackRect = Rect.fromLTWH(
-      left,
-      cy - trackHeight / 2,
-      trackWidth,
-      trackHeight,
-    );
-    final track = RRect.fromRectAndRadius(trackRect, const Radius.circular(2));
-    canvas.drawRRect(track, background);
-    if (bufferedProgress > 0) {
+    // 1. Inactive Track (Remaining unplayed portion)
+    if (progressX < right) {
+      final inactiveRect = Rect.fromLTWH(
+        progressX,
+        cy - trackHeight / 2,
+        right - progressX,
+        trackHeight,
+      );
       canvas.drawRRect(
-        RRect.fromRectAndRadius(
-          Rect.fromLTWH(
-            left,
-            cy - trackHeight / 2,
-            trackWidth * bufferedProgress,
-            trackHeight,
-          ),
-          const Radius.circular(2),
-        ),
+        RRect.fromRectAndRadius(inactiveRect, const Radius.circular(2)),
+        background,
+      );
+    }
+
+    // 2. Buffered Track (Ahead of playback position)
+    final bufferedX = left + trackWidth * bufferedProgress;
+    if (bufferedX > progressX) {
+      final bufferedRect = Rect.fromLTWH(
+        progressX,
+        cy - trackHeight / 2,
+        bufferedX - progressX,
+        trackHeight,
+      );
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(bufferedRect, const Radius.circular(2)),
         bufferedPaint,
       );
     }
-    if (progress > 0) {
+
+    // 3. Active Track (Straight smooth played portion)
+    if (activeWidth > 0) {
+      final activeRect = Rect.fromLTWH(
+        left,
+        cy - trackHeight / 2,
+        activeWidth,
+        trackHeight,
+      );
       canvas.drawRRect(
-        RRect.fromRectAndRadius(
-          Rect.fromLTWH(
-            left,
-            cy - trackHeight / 2,
-            trackWidth * progress,
-            trackHeight,
-          ),
-          const Radius.circular(2),
-        ),
+        RRect.fromRectAndRadius(activeRect, const Radius.circular(2)),
         active,
       );
     }
 
-    final dragging = drag.value != null;
+    // 4. Interactive Thumb with Spring Scaling & Soft Glow
+    final scale = 1.0 + (thumbScale * 0.28);
+    final currentThumbRadius = thumbRadius * scale;
+
+    final glowAlpha = 0.16 + (thumbScale * 0.18);
+    final glowRadius = 12.0 + (thumbScale * 6.0);
     final glow = Paint()
-      ..color = accent.withValues(alpha: dragging ? 0.24 : 0.16)
+      ..color = accent.withValues(alpha: glowAlpha)
       ..style = PaintingStyle.fill;
-    canvas.drawCircle(Offset(centerX, cy), dragging ? 15 : 12, glow);
-    canvas.drawCircle(Offset(centerX, cy), thumbRadius + 1.4, active);
+
+    canvas.drawCircle(Offset(progressX, cy), glowRadius, glow);
+    canvas.drawCircle(Offset(progressX, cy), currentThumbRadius + 1.4, active);
     canvas.drawCircle(
-      Offset(centerX, cy),
-      thumbRadius - 2.2,
-      Paint()..color = Colors.white.withValues(alpha: 0.92),
+      Offset(progressX, cy),
+      currentThumbRadius - 2.2,
+      Paint()..color = Colors.white.withValues(alpha: 0.94),
     );
   }
 
@@ -270,7 +319,8 @@ final class _SeekPainter extends CustomPainter {
       oldDelegate.duration != duration ||
       oldDelegate.position != position ||
       oldDelegate.buffered != buffered ||
-      oldDelegate.drag != drag;
+      oldDelegate.drag != drag ||
+      oldDelegate.thumbScale != thumbScale;
 }
 
 /// Elapsed / total labels. Listens to the same drag notifier as the track so
@@ -304,12 +354,15 @@ final class _SeekLabels extends HookWidget {
         final current = dragged == null
             ? position.value
             : Duration(milliseconds: (dragged * totalMs).round());
-        return Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(formatDuration(current), style: style),
-            Text(formatDuration(duration), style: style),
-          ],
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 7.0),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(formatDuration(current), style: style),
+              Text(formatDuration(duration), style: style),
+            ],
+          ),
         );
       },
     );

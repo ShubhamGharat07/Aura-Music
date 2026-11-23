@@ -48,7 +48,10 @@ enum SearchFilter {
   artists('Artists'),
 
   /// Playlists only.
-  playlists('Playlists');
+  playlists('Playlists'),
+
+  /// Podcasts only.
+  podcasts('Podcasts');
 
   const SearchFilter(this.label);
 
@@ -110,11 +113,13 @@ final class SearchState extends Equatable {
       results.songs.length +
           results.albums.length +
           results.artists.length +
-          results.playlists.length,
+          results.playlists.length +
+          results.podcasts.length,
     SearchFilter.songs => results.songs.length,
     SearchFilter.albums => results.albums.length,
     SearchFilter.artists => results.artists.length,
     SearchFilter.playlists => results.playlists.length,
+    SearchFilter.podcasts => results.podcasts.length,
   };
 
   /// Copies with overrides; `error` / `browseError` are cleared only when

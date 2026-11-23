@@ -118,6 +118,7 @@ final class PlayerSidePanel extends HookWidget {
                 : QueuePanel(
                     queue: state.queue,
                     currentIndex: state.currentIndex,
+                    playing: state.isPlaying,
                     accent: accent,
                     onSelect: onSelectQueue,
                     onReorder: onReorderQueue,

@@ -1,9 +1,12 @@
-﻿import 'dart:async';
+import 'dart:async';
 
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fpdart/fpdart.dart';
 import 'package:mocktail/mocktail.dart';
 
+import 'package:aura_music/core/constants/app_constants.dart';
+import 'package:aura_music/core/di/injection.dart';
 import 'package:aura_music/core/error/failures.dart';
 import 'package:aura_music/features/player/domain/entities/track.dart';
 import 'package:aura_music/features/search/domain/entities/search_results.dart';
@@ -19,6 +22,10 @@ import 'package:aura_music/features/search/domain/usecases/search_catalog.dart';
 import 'package:aura_music/features/search/presentation/bloc/search_bloc.dart';
 import 'package:aura_music/features/search/presentation/bloc/search_event.dart';
 import 'package:aura_music/features/search/presentation/bloc/search_state.dart';
+import 'package:aura_music/features/search/presentation/pages/search_page.dart';
+import 'package:aura_music/features/search/presentation/widgets/search_suggestions_view.dart';
+
+import '../../../helpers/pump_app.dart';
 
 final class _MockSearchRepository extends Mock implements SearchRepository {}
 
@@ -32,6 +39,19 @@ void main() {
   late _MockSearchHistoryRepository historyRepository;
   late SearchBloc bloc;
 
+  SearchBloc makeBloc({
+    Duration suggestionDebounce = AppConstants.searchDebounce,
+  }) => SearchBloc(
+    SearchCatalog(searchRepository),
+    GetSuggestions(searchRepository),
+    GetBrowseSuggestions(searchRepository),
+    GetRecentSearches(historyRepository),
+    SaveRecentSearch(historyRepository),
+    ClearRecentSearches(historyRepository),
+    RemoveRecentSearch(historyRepository),
+    suggestionDebounce: suggestionDebounce,
+  );
+
   setUp(() {
     searchRepository = _MockSearchRepository();
     historyRepository = _MockSearchHistoryRepository();
@@ -41,15 +61,7 @@ void main() {
     when(() => historyRepository.add(any())).thenAnswer((_) async {});
     when(() => historyRepository.clear()).thenAnswer((_) async {});
     when(() => historyRepository.remove(any())).thenAnswer((_) async {});
-    bloc = SearchBloc(
-      SearchCatalog(searchRepository),
-      GetSuggestions(searchRepository),
-      GetBrowseSuggestions(searchRepository),
-      GetRecentSearches(historyRepository),
-      SaveRecentSearch(historyRepository),
-      ClearRecentSearches(historyRepository),
-      RemoveRecentSearch(historyRepository),
-    );
+    bloc = makeBloc(suggestionDebounce: Duration.zero);
   });
 
   tearDown(() => bloc.close());
@@ -73,6 +85,101 @@ void main() {
     expect(bloc.state.status, SearchStatus.suggesting);
     expect(bloc.state.suggestions, <Track>[track]);
   });
+
+  testWidgets(
+    'typing debounces live suggestions and the arrow fills the field',
+    (tester) async {
+      when(
+        () => searchRepository.browse(limit: any(named: 'limit')),
+      ).thenAnswer((_) async => const Right(<Track>[]));
+      when(() => searchRepository.suggestions('neo', limit: 6)).thenAnswer(
+        (_) async => const Right([
+          track,
+          Track(id: 'duplicate', title: 'NEON', artist: 'Other'),
+        ]),
+      );
+      when(
+        () => searchRepository.suggestions('Neon', limit: 6),
+      ).thenAnswer((_) async => const Right([track]));
+      when(
+        () => searchRepository.search('Neon'),
+      ).thenAnswer((_) async => const Right(SearchResults()));
+      getIt.registerFactory<SearchBloc>(() => makeBloc());
+      addTearDown(() => getIt.unregister<SearchBloc>());
+
+      await pumpApp(tester, const SearchPage());
+      final field = find.byType(TextField);
+      await tester.enterText(field, 'ne');
+      await tester.pump(const Duration(milliseconds: 100));
+      await tester.enterText(field, 'neo');
+      await tester.pump();
+      expect(find.byType(SearchSuggestionsView), findsOneWidget);
+      expect(find.text('Neon'), findsNothing);
+
+      await tester.pump(AppConstants.searchDebounce);
+      expect(find.text('Neon'), findsOneWidget);
+      expect(find.text('NEON'), findsNothing);
+      verifyNever(() => searchRepository.suggestions('ne', limit: 6));
+
+      await tester.tap(find.byTooltip('Fill search with Neon'));
+      await tester.pump();
+      final textField = tester.widget<TextField>(field);
+      expect(textField.controller!.text, 'Neon');
+      expect(textField.controller!.selection.baseOffset, 4);
+      expect(textField.focusNode!.hasFocus, isTrue);
+      verifyNever(() => searchRepository.search(any()));
+
+      await tester.pump(AppConstants.searchDebounce);
+      await tester.tap(
+        find.descendant(
+          of: find.byType(SearchSuggestionsView),
+          matching: find.text('Neon'),
+        ),
+      );
+      await tester.pumpAndSettle();
+      verify(() => searchRepository.search('Neon')).called(1);
+
+      await tester.enterText(field, 'neo');
+      await tester.pump();
+      expect(
+        find.descendant(
+          of: find.byType(SearchSuggestionsView),
+          matching: find.text('Neon'),
+        ),
+        findsOneWidget,
+      );
+      verify(() => searchRepository.suggestions('neo', limit: 6)).called(1);
+      await tester.pumpWidget(const SizedBox.shrink());
+    },
+  );
+
+  test(
+    'older suggestions are discarded as soon as the query changes',
+    () async {
+      final old = Completer<Either<Failure, List<Track>>>();
+      final fresh = Completer<Either<Failure, List<Track>>>();
+      when(
+        () => searchRepository.suggestions('ne', limit: 6),
+      ).thenAnswer((_) => old.future);
+      when(
+        () => searchRepository.suggestions('neo', limit: 6),
+      ).thenAnswer((_) => fresh.future);
+
+      bloc.add(const SearchQueryChanged('ne'));
+      await pumpEventQueue();
+      bloc.add(const SearchQueryChanged('neo'));
+      await pumpEventQueue();
+
+      old.complete(const Right([track]));
+      await pumpEventQueue();
+      expect(bloc.state.query, 'neo');
+      expect(bloc.state.suggestions, isEmpty);
+
+      fresh.complete(const Right([track]));
+      await pumpEventQueue();
+      expect(bloc.state.suggestions, [track]);
+    },
+  );
 
   test('submitting emits loading then ready and records history', () async {
     when(() => searchRepository.search(any())).thenAnswer(

@@ -52,6 +52,18 @@ void main() {
     expect(result.getOrElse((_) => ''), 'https://cdn/fallback.mp4');
   });
 
+  test('falls back to YouTube source when JioSaavn fails or misses', () async {
+    final jiosaavn = _Source('jiosaavn', (_) async => null);
+    final youtube = _Source('youtube', (_) async => 'https://rr.googlevideo.com/opus_stream');
+
+    final result = await StreamRepositoryImpl([jiosaavn, youtube]).resolve(track);
+
+    expect(result.isRight(), isTrue);
+    expect(result.getOrElse((_) => ''), 'https://rr.googlevideo.com/opus_stream');
+    expect(jiosaavn.calls, 1);
+    expect(youtube.calls, 1);
+  });
+
   test('returns StreamFailure when every source misses', () async {
     final result = await StreamRepositoryImpl([
       _Source('a', (_) async => null),

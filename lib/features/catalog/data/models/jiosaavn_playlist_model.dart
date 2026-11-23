@@ -26,7 +26,7 @@ final class JiosaavnPlaylistModel {
       imageUrl: json['image'] as String?,
       subtitle: json['subtitle'] as String?,
       songCount: int.tryParse(
-        '${json['list_count'] ?? json['numsongs'] ?? info['song_count'] ?? ''}',
+        '${json['list_count'] ?? json['numsongs'] ?? json['count'] ?? info['song_count'] ?? ''}',
       ),
     );
   }

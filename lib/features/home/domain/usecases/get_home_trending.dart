@@ -12,6 +12,9 @@ final class GetHomeTrending implements UseCase<List<Track>, int> {
   /// Creates the use case.
   const GetHomeTrending(this._repository);
 
+  /// Four Home pages of six tracks.
+  static const int homePickLimit = 24;
+
   final HomeRepository _repository;
 
   @override

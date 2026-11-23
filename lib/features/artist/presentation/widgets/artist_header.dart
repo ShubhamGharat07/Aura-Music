@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import 'package:aura_music/core/theme/typography.dart';
+import 'package:aura_music/core/ui/aura_hero.dart';
 import 'package:aura_music/features/catalog/domain/entities/artist.dart';
 
 /// Artist hero header (PRD S10): circular portrait, name, followers, Play.
@@ -13,6 +14,7 @@ final class ArtistHeader extends StatelessWidget {
   const ArtistHeader({
     super.key,
     required this.artist,
+    this.heroTag,
     this.followerCount,
     this.onPlay,
   });
@@ -26,15 +28,20 @@ final class ArtistHeader extends StatelessWidget {
   /// Plays the artist's top songs.
   final VoidCallback? onPlay;
 
+  /// Artwork tag from the card that opened the detail route.
+  final Object? heroTag;
+
   @override
   Widget build(BuildContext context) {
+    final tag = heroTag;
+    final portrait = ClipOval(
+      child: SizedBox(width: 140.w, height: 140.w, child: _portrait()),
+    );
     return Padding(
       padding: EdgeInsets.only(top: 8.w, bottom: 16.w),
       child: Column(
         children: [
-          ClipOval(
-            child: SizedBox(width: 140.w, height: 140.w, child: _portrait()),
-          ),
+          tag == null ? portrait : AuraHero(tag: tag, child: portrait),
           SizedBox(height: 16.w),
           Text(
             artist.name,

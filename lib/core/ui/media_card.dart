@@ -5,6 +5,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:aura_music/core/theme/colors.dart';
 import 'package:aura_music/core/theme/tokens.dart';
 import 'package:aura_music/core/theme/typography.dart';
+import 'package:aura_music/core/ui/aura_hero.dart';
 
 /// Media card for albums / artists / tracks (PRD 7.5).
 ///
@@ -21,6 +22,7 @@ final class MediaCard extends StatelessWidget {
     required this.subtitle,
     this.artUrl,
     this.onTap,
+    this.heroTag,
   });
 
   /// Card title.
@@ -35,54 +37,60 @@ final class MediaCard extends StatelessWidget {
   /// Tap callback.
   final VoidCallback? onTap;
 
+  /// Optional hero tag for a card that opens a detail page.
+  final Object? heroTag;
+
   @override
   Widget build(BuildContext context) {
     final radius = BorderRadius.circular(AppRadius.art);
+    Widget art = AspectRatio(
+      aspectRatio: 1,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          borderRadius: radius,
+          color: AppColors.bgElevated,
+          border: Border.all(color: AppColors.glassBorder, width: 0.6),
+        ),
+        child: ClipRRect(
+          borderRadius: radius,
+          child: artUrl == null
+              ? ColoredBox(
+                  color: AppColors.bgElevated,
+                  child: Icon(
+                    Icons.album_outlined,
+                    color: AppColors.textTertiary,
+                    size: 30.r,
+                  ),
+                )
+              : CachedNetworkImage(
+                  imageUrl: artUrl!,
+                  memCacheWidth: 400,
+                  memCacheHeight: 400,
+                  fit: BoxFit.cover,
+                  fadeInDuration: AppDurations.fast,
+                  placeholder: (context, url) =>
+                      const ColoredBox(color: AppColors.bgElevated),
+                  errorWidget: (context, url, error) => ColoredBox(
+                    color: AppColors.bgElevated,
+                    child: Icon(
+                      Icons.album_outlined,
+                      color: AppColors.textTertiary,
+                      size: 30.r,
+                    ),
+                  ),
+                ),
+        ),
+      ),
+    );
+    final tag = heroTag;
+    if (tag != null) art = AuraHero(tag: tag, child: art);
     return InkWell(
       onTap: onTap,
       borderRadius: radius,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          AspectRatio(
-            aspectRatio: 1,
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                borderRadius: radius,
-                color: AppColors.bgElevated,
-                border: Border.all(color: AppColors.glassBorder, width: 0.6),
-              ),
-              child: ClipRRect(
-                borderRadius: radius,
-                child: artUrl == null
-                    ? ColoredBox(
-                        color: AppColors.bgElevated,
-                        child: Icon(
-                          Icons.album_outlined,
-                          color: AppColors.textTertiary,
-                          size: 30.r,
-                        ),
-                      )
-                    : CachedNetworkImage(
-                        imageUrl: artUrl!,
-                        memCacheWidth: 400,
-                        memCacheHeight: 400,
-                        fit: BoxFit.cover,
-                        fadeInDuration: AppDurations.fast,
-                        placeholder: (context, url) =>
-                            const ColoredBox(color: AppColors.bgElevated),
-                        errorWidget: (context, url, error) => ColoredBox(
-                          color: AppColors.bgElevated,
-                          child: Icon(
-                            Icons.album_outlined,
-                            color: AppColors.textTertiary,
-                            size: 30.r,
-                          ),
-                        ),
-                      ),
-              ),
-            ),
-          ),
+          art,
           SizedBox(height: 10.w),
           Text(
             title,

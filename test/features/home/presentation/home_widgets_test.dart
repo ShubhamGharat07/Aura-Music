@@ -184,9 +184,9 @@ void main() {
     expect(find.byType(ClipOval), findsNWidgets(2));
   });
 
-  testWidgets('top picks page between two three-column grids', (tester) async {
+  testWidgets('top picks swipes through four six-card grids', (tester) async {
     final tracks = [
-      for (var i = 0; i < 12; i++)
+      for (var i = 0; i < 25; i++)
         Track(id: 't$i', title: 'Pick $i', artist: 'Artist $i'),
     ];
     await pumpApp(
@@ -207,13 +207,22 @@ void main() {
     }
     expect(find.text('Pick 6').hitTestable(), findsNothing);
 
-    await tester.drag(find.byType(PageView), const Offset(-600, 0));
-    await tester.pumpAndSettle();
-
-    for (var i = 6; i < 12; i++) {
-      expect(find.text('Pick $i').hitTestable(), findsOneWidget);
+    final pager = find.byType(PageView);
+    for (var page = 1; page < 4; page++) {
+      await tester.drag(pager, const Offset(-320, 0));
+      await tester.pumpAndSettle();
+      for (var slot = 0; slot < 6; slot++) {
+        expect(
+          find.text('Pick ${page * 6 + slot}').hitTestable(),
+          findsOneWidget,
+        );
+      }
     }
-    expect(find.text('Pick 0').hitTestable(), findsNothing);
+    await tester.drag(pager, const Offset(-320, 0));
+    await tester.pumpAndSettle();
+    expect(find.text('Pick 23').hitTestable(), findsOneWidget);
+    expect(find.text('Pick 24'), findsNothing);
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('artist row hides itself when empty and offers retry on error', (

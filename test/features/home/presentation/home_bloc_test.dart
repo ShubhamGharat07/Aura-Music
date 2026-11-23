@@ -26,8 +26,13 @@ import 'package:aura_music/features/library/domain/entities/history_entry.dart';
 import 'package:aura_music/features/library/domain/repositories/play_history_repository.dart';
 import 'package:aura_music/features/library/domain/usecases/watch_history.dart';
 import 'package:aura_music/features/player/domain/entities/track.dart';
+import 'package:aura_music/features/podcast/domain/entities/podcast_show.dart';
+import 'package:aura_music/features/podcast/domain/repositories/podcast_repository.dart';
+import 'package:aura_music/features/podcast/domain/usecases/get_top_podcasts.dart';
 
 final class _MockHomeRepository extends Mock implements HomeRepository {}
+
+final class _MockPodcastRepository extends Mock implements PodcastRepository {}
 
 final class _FakeHistoryRepository implements PlayHistoryRepository {
   _FakeHistoryRepository([this.entries = const []]);
@@ -204,6 +209,37 @@ void main() {
     await pumpEventQueue();
 
     expect(bloc.state.artists.status, SectionStatus.empty);
+  });
+
+  test('started loads podcasts when getTopPodcasts is wired', () async {
+    final podcastRepository = _MockPodcastRepository();
+    when(
+      () => podcastRepository.getTopPodcasts(limit: any(named: 'limit')),
+    ).thenAnswer(
+      (_) async => const Right([
+        PodcastShow(id: 'pod1', title: 'Ranveer Show'),
+      ]),
+    );
+    final bloc = HomeBloc(
+      GetHomeTrending(repository),
+      GetNewReleases(repository),
+      GetArtistRadio(repository),
+      GetHomeGenres(repository),
+      GetGenreTracks(repository),
+      GetLanguageTracks(repository),
+      GetNewAlbums(repository),
+      GetTrendingAlbums(repository),
+      GetPopularArtists(repository),
+      WatchHistory(_FakeHistoryRepository()),
+      getTopPodcasts: GetTopPodcasts(podcastRepository),
+    );
+    addTearDown(bloc.close);
+
+    bloc.add(const HomeStarted());
+    await pumpEventQueue();
+
+    expect(bloc.state.podcasts.status, SectionStatus.ready);
+    expect(bloc.state.podcasts.shows.single.title, 'Ranveer Show');
   });
 
   test(

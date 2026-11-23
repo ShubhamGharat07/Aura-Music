@@ -8,6 +8,7 @@ import 'package:aura_music/core/usecase/usecase.dart';
 import 'package:aura_music/features/catalog/domain/entities/catalog_language.dart';
 import 'package:aura_music/features/catalog/domain/entities/genre.dart';
 import 'package:aura_music/features/home/domain/usecases/get_artist_radio.dart';
+import 'package:aura_music/features/home/domain/usecases/get_editorial_playlists.dart';
 import 'package:aura_music/features/home/domain/usecases/get_genre_tracks.dart';
 import 'package:aura_music/features/home/domain/usecases/get_home_genres.dart';
 import 'package:aura_music/features/home/domain/usecases/get_home_trending.dart';
@@ -15,12 +16,14 @@ import 'package:aura_music/features/home/domain/usecases/get_language_tracks.dar
 import 'package:aura_music/features/home/domain/usecases/get_new_albums.dart';
 import 'package:aura_music/features/home/domain/usecases/get_new_releases.dart';
 import 'package:aura_music/features/home/domain/usecases/get_popular_artists.dart';
+import 'package:aura_music/features/home/domain/usecases/get_top_charts.dart';
 import 'package:aura_music/features/home/domain/usecases/get_trending_albums.dart';
 import 'package:aura_music/features/home/presentation/bloc/home_event.dart';
 import 'package:aura_music/features/home/presentation/bloc/home_state.dart';
 import 'package:aura_music/features/library/domain/entities/history_entry.dart';
 import 'package:aura_music/features/library/domain/usecases/watch_history.dart';
 import 'package:aura_music/features/player/domain/entities/track.dart';
+import 'package:aura_music/features/podcast/domain/usecases/get_top_podcasts.dart';
 
 /// Home feed (PRD S03). Loads every section independently; when the device is
 /// offline it falls back to local sections (Downloads / Liked / History).
@@ -38,8 +41,14 @@ final class HomeBloc extends Bloc<HomeEvent, HomeState> {
     this._getNewAlbums,
     this._getTrendingAlbums,
     this._getPopularArtists,
-    this._watchHistory,
-  ) : super(const HomeState()) {
+    this._watchHistory, {
+    GetTopPodcasts? getTopPodcasts,
+    GetTopCharts? getTopCharts,
+    GetEditorialPlaylists? getEditorialPlaylists,
+  }) : _getTopPodcasts = getTopPodcasts,
+       _getTopCharts = getTopCharts,
+       _getEditorialPlaylists = getEditorialPlaylists,
+       super(const HomeState()) {
     on<HomeStarted>(_onLoad, transformer: restartable());
     on<HomeRefreshed>(_onLoad, transformer: restartable());
     on<HomeTopPicksStarted>(_onTopPicks, transformer: restartable());
@@ -62,6 +71,9 @@ final class HomeBloc extends Bloc<HomeEvent, HomeState> {
   final GetTrendingAlbums _getTrendingAlbums;
   final GetPopularArtists _getPopularArtists;
   final WatchHistory _watchHistory;
+  final GetTopPodcasts? _getTopPodcasts;
+  final GetTopCharts? _getTopCharts;
+  final GetEditorialPlaylists? _getEditorialPlaylists;
 
   static const int _limit = 20;
   static const int _continueLimit = 10;
@@ -103,6 +115,15 @@ final class HomeBloc extends Bloc<HomeEvent, HomeState> {
         newAlbums: const AlbumSection(),
         trendingAlbums: const AlbumSection(),
         artists: const ArtistSection(),
+        podcasts: _getTopPodcasts != null
+            ? const PodcastSection()
+            : const PodcastSection(status: SectionStatus.empty),
+        charts: _getTopCharts != null
+            ? const PlaylistSection()
+            : const PlaylistSection(status: SectionStatus.empty),
+        editorialPlaylists: _getEditorialPlaylists != null
+            ? const PlaylistSection()
+            : const PlaylistSection(status: SectionStatus.empty),
         seedArtist: seed,
         offline: false,
       ),
@@ -116,6 +137,10 @@ final class HomeBloc extends Bloc<HomeEvent, HomeState> {
       _loadNewAlbums(emit, generation),
       _loadTrendingAlbums(emit, generation),
       _loadArtists(emit, generation),
+      if (_getTopPodcasts != null) _loadPodcasts(emit, generation),
+      if (_getTopCharts != null) _loadCharts(emit, generation),
+      if (_getEditorialPlaylists != null)
+        _loadEditorialPlaylists(emit, generation),
       if (genre != null) _loadGenreTracks(emit, genre),
       if (language != null) _loadLanguageTracks(emit, language),
     ]);
@@ -235,7 +260,7 @@ final class HomeBloc extends Bloc<HomeEvent, HomeState> {
   }
 
   Future<void> _loadTrending(Emitter<HomeState> emit, int generation) async {
-    final result = await _getTrending(_limit);
+    final result = await _getTrending(GetHomeTrending.homePickLimit);
     if (generation != _generation) return;
     result.fold(
       (failure) => emit(
@@ -291,6 +316,52 @@ final class HomeBloc extends Bloc<HomeEvent, HomeState> {
       (failure) =>
           emit(state.copyWith(artists: ArtistSection.failed(failure.message))),
       (artists) => emit(state.copyWith(artists: ArtistSection.ready(artists))),
+    );
+  }
+
+  Future<void> _loadPodcasts(Emitter<HomeState> emit, int generation) async {
+    final getter = _getTopPodcasts;
+    if (getter == null) return;
+    final result = await getter(_limit);
+    if (generation != _generation) return;
+    result.fold(
+      (failure) => emit(
+        state.copyWith(podcasts: PodcastSection.failed(failure.message)),
+      ),
+      (shows) => emit(state.copyWith(podcasts: PodcastSection.ready(shows))),
+    );
+  }
+
+  Future<void> _loadCharts(Emitter<HomeState> emit, int generation) async {
+    final getter = _getTopCharts;
+    if (getter == null) return;
+    final result = await getter(const NoParams());
+    if (generation != _generation) return;
+    result.fold(
+      (failure) =>
+          emit(state.copyWith(charts: PlaylistSection.failed(failure.message))),
+      (playlists) =>
+          emit(state.copyWith(charts: PlaylistSection.ready(playlists))),
+    );
+  }
+
+  Future<void> _loadEditorialPlaylists(
+    Emitter<HomeState> emit,
+    int generation,
+  ) async {
+    final getter = _getEditorialPlaylists;
+    if (getter == null) return;
+    final result = await getter(const NoParams());
+    if (generation != _generation) return;
+    result.fold(
+      (failure) => emit(
+        state.copyWith(
+          editorialPlaylists: PlaylistSection.failed(failure.message),
+        ),
+      ),
+      (playlists) => emit(
+        state.copyWith(editorialPlaylists: PlaylistSection.ready(playlists)),
+      ),
     );
   }
 
