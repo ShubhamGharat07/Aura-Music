@@ -5,7 +5,6 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:aura_music/core/router/routes.dart';
-import 'package:aura_music/core/theme/colors.dart';
 import 'package:aura_music/core/theme/tokens.dart';
 import 'package:aura_music/core/ui/section_header.dart';
 import 'package:aura_music/core/ui/skeleton.dart';
@@ -19,7 +18,7 @@ import 'package:aura_music/features/player/domain/entities/track.dart';
 /// The top-picks opener for Home.
 ///
 /// A swipeable grid with six tracks per page across compact and wide layouts.
-final class HomeQuickPicks extends StatelessWidget {
+final class HomeQuickPicks extends StatefulWidget {
   /// Creates the top-picks rail.
   const HomeQuickPicks({
     super.key,
@@ -42,7 +41,25 @@ final class HomeQuickPicks extends StatelessWidget {
   final VoidCallback onRetry;
 
   @override
+  State<HomeQuickPicks> createState() => _HomeQuickPicksState();
+}
+
+final class _HomeQuickPicksState extends State<HomeQuickPicks>
+    with AutomaticKeepAliveClientMixin<HomeQuickPicks> {
+  // Retain the ready pager and its decoded artwork when the feed scrolls away.
+  @override
+  bool get wantKeepAlive => widget.section.status == SectionStatus.ready;
+
+  @override
+  void didUpdateWidget(HomeQuickPicks oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    updateKeepAlive();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    super.build(context);
+    final HomeQuickPicks(:section, :padding, :columns, :onRetry) = widget;
     if (section.status == SectionStatus.empty) return const SizedBox.shrink();
 
     final tracks = section.tracks
@@ -118,8 +135,10 @@ final class _PicksPager extends HookWidget {
   @override
   Widget build(BuildContext context) {
     final controller = usePageController();
-    final activePage = useState(0);
     final reduceMotion = MediaQuery.disableAnimationsOf(context);
+    final direction = Directionality.of(context) == TextDirection.ltr
+        ? 1.0
+        : -1.0;
     final scaler = MediaQuery.textScalerOf(context);
     final titleBlock = scaler.scale(_titleBlock.sp);
     final artistBlock = scaler.scale(_artistBlock.sp);
@@ -132,111 +151,62 @@ final class _PicksPager extends HookWidget {
             (constraints.maxWidth - 2 * padding - _gap.w * (cols - 1)) / cols;
         final tileHeight = cell + 9.h + titleBlock + 3.h + artistBlock;
         final pageCount = tracks.isEmpty ? 1 : (tracks.length / perPage).ceil();
-        return Column(
-          children: [
-            SizedBox(
-              height: tileHeight * rows + _rowGap.h * (rows - 1) + 4,
-              child: PageView.builder(
-                controller: controller,
-                allowImplicitScrolling: true,
-                itemCount: pageCount,
-                onPageChanged: (page) {
-                  activePage.value = page;
-                },
-                itemBuilder: (context, page) {
-                  final grid = _PicksPage(
-                    page: page,
-                    perPage: perPage,
-                    cols: cols,
-                    rows: rows,
-                    cell: cell,
-                    titleBlock: titleBlock,
-                    artistBlock: artistBlock,
-                    loading: tracks.isEmpty,
-                    tracks: tracks,
-                    padding: padding,
-                    onTap: tracks.isEmpty
-                        ? null
-                        : (trackIndex) {
-                            HapticFeedback.lightImpact();
-                            playFromCatalog(context, tracks, trackIndex);
-                          },
-                  );
-                  if (reduceMotion || pageCount == 1) return grid;
-                  return AnimatedBuilder(
-                    animation: controller,
-                    child: RepaintBoundary(child: grid),
-                    builder: (context, child) {
-                      // Follow the drag directly so a reversal can interrupt
-                      // the transition without starting another animation.
-                      final current = controller.hasClients
-                          ? controller.page ?? controller.initialPage.toDouble()
-                          : controller.initialPage.toDouble();
-                      final distance = (current - page).abs().clamp(0.0, 1.0);
-                      final scale =
-                          1 - 0.055 * AppCurves.out.transform(distance);
-                      return Transform.scale(scale: scale, child: child);
-                    },
-                  );
-                },
-              ),
+        return SizedBox(
+          height: tileHeight * rows + _rowGap.h * (rows - 1) + 4,
+          child: PageView.builder(
+            key: PageStorageKey(
+              tracks.isEmpty ? 'top-picks-loading' : 'top-picks',
             ),
-            if (pageCount > 1)
-              Padding(
-                padding: EdgeInsets.only(top: AppSpacing.sm),
-                child: _PageDots(
-                  count: pageCount,
-                  active: activePage.value.clamp(0, pageCount - 1),
-                  reduceMotion: reduceMotion,
-                ),
-              ),
-          ],
+            controller: controller,
+            allowImplicitScrolling: true,
+            itemCount: pageCount,
+            itemBuilder: (context, page) {
+              final grid = _PicksPage(
+                page: page,
+                perPage: perPage,
+                cols: cols,
+                rows: rows,
+                cell: cell,
+                titleBlock: titleBlock,
+                artistBlock: artistBlock,
+                loading: tracks.isEmpty,
+                tracks: tracks,
+                padding: padding,
+                onTap: tracks.isEmpty
+                    ? null
+                    : (trackIndex) {
+                        HapticFeedback.lightImpact();
+                        playFromCatalog(context, tracks, trackIndex);
+                      },
+              );
+              if (reduceMotion || pageCount == 1) return grid;
+              return AnimatedBuilder(
+                animation: controller,
+                child: grid,
+                builder: (context, child) {
+                  final current = controller.hasClients
+                      ? controller.page
+                      : null;
+                  final delta = ((current ?? page.toDouble()) - page).clamp(
+                    -1.0,
+                    1.0,
+                  );
+                  // A slight drift adds depth during the swipe. Both effects
+                  // follow the finger and land at identity on the snapped page.
+                  final scale = 1 - 0.018 * delta * delta;
+                  return Transform(
+                    alignment: Alignment.topCenter,
+                    transform: Matrix4.identity()
+                      ..translateByDouble(direction * delta * 8, 0, 0, 1)
+                      ..scaleByDouble(scale, scale, 1, 1),
+                    child: child,
+                  );
+                },
+              );
+            },
+          ),
         );
       },
-    );
-  }
-}
-
-final class _PageDots extends StatelessWidget {
-  const _PageDots({
-    required this.count,
-    required this.active,
-    required this.reduceMotion,
-  });
-
-  final int count;
-  final int active;
-  final bool reduceMotion;
-
-  @override
-  Widget build(BuildContext context) {
-    return Semantics(
-      label: 'Top picks, page ${active + 1} of $count',
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          for (var i = 0; i < count; i++)
-            Padding(
-              padding: EdgeInsets.symmetric(horizontal: 4.w),
-              child: AnimatedScale(
-                scale: i == active ? 1.25 : 1,
-                duration: reduceMotion ? Duration.zero : AppDurations.fast,
-                curve: AppCurves.out,
-                child: SizedBox.square(
-                  dimension: 6.r,
-                  child: DecoratedBox(
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: i == active
-                          ? AppColors.textPrimary
-                          : AppColors.textTertiary,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-        ],
-      ),
     );
   }
 }

@@ -225,6 +225,56 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('top picks keeps the swiped page when scrolling down and back', (
+    tester,
+  ) async {
+    final scroll = ScrollController();
+    addTearDown(scroll.dispose);
+    final tracks = [
+      for (var i = 0; i < 12; i++)
+        Track(id: 't$i', title: 'Pick $i', artist: 'Artist $i'),
+    ];
+    await pumpApp(
+      tester,
+      CustomScrollView(
+        key: const PageStorageKey('test-home-feed'),
+        controller: scroll,
+        slivers: [
+          SliverList.list(
+            children: [
+              HomeQuickPicks(
+                section: TrackSection(
+                  status: SectionStatus.ready,
+                  tracks: tracks,
+                ),
+                padding: 20,
+                columns: 3,
+                onRetry: () {},
+              ),
+              const SizedBox(height: 2400),
+            ],
+          ),
+        ],
+      ),
+    );
+
+    final pager = find.byType(PageView);
+    final controller = tester.widget<PageView>(pager).controller!;
+    await tester.drag(pager, const Offset(-320, 0));
+    await tester.pumpAndSettle();
+    expect(controller.page, 1);
+
+    scroll.jumpTo(1500);
+    await tester.pumpAndSettle();
+    expect(find.text('Pick 6').hitTestable(), findsNothing);
+
+    scroll.jumpTo(0);
+    await tester.pump();
+    expect(tester.widget<PageView>(pager).controller, same(controller));
+    expect(controller.page, 1);
+    expect(find.text('Pick 6').hitTestable(), findsOneWidget);
+  });
+
   testWidgets('artist row hides itself when empty and offers retry on error', (
     tester,
   ) async {

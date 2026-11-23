@@ -1,0 +1,130 @@
+name: Release APK & OTA Manifest
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    name: Build Signed Release APK & Publish OTA
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+          cache: 'gradle'
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Verify analysis & tests
+        run: |
+          flutter analyze
+          flutter test
+
+      - name: Decode Production Keystore
+        run: |
+          mkdir -p android/app
+          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > android/app/aura-release.jks
+
+      - name: Create key.properties
+        run: |
+          cat <<EOF > android/key.properties
+          storeFile=app/aura-release.jks
+          storePassword=${{ secrets.STORE_PASSWORD }}
+          keyAlias=${{ secrets.KEY_ALIAS }}
+          keyPassword=${{ secrets.KEY_PASSWORD }}
+          EOF
+
+      - name: Build Signed Split-ABI APKs
+        env:
+          AURA_REQUIRE_RELEASE_SIGNING: "true"
+        run: flutter build apk --release --split-per-abi
+
+      - name: Generate and Validate update.json
+        shell: bash
+        run: |
+          TAG_VERSION="${GITHUB_REF_NAME#v}"
+          VERSION_NAME="${TAG_VERSION%%+*}"
+          
+          # Extract build number from pubspec.yaml
+          BUILD_NUMBER=$(sed -nE 's/^version: [0-9]+\.[0-9]+\.[0-9]+\+([1-9][0-9]*)[[:space:]]*$/\1/p' pubspec.yaml)
+          if [[ -z "$BUILD_NUMBER" || ( "$TAG_VERSION" != "$VERSION_NAME" && "$TAG_VERSION" != "$VERSION_NAME+$BUILD_NUMBER" ) ]]; then
+            echo "Error: release tag or pubspec build number is invalid."
+            exit 1
+          fi
+          
+          APK_PATH="build/app/outputs/flutter-apk/app-arm64-v8a-release.apk"
+          if [ ! -f "$APK_PATH" ]; then
+            echo "Error: $APK_PATH not found!"
+            exit 1
+          fi
+          
+          AAPT=$(find "$ANDROID_HOME/build-tools" -mindepth 2 -maxdepth 2 -type f -name aapt | sort -V | tail -n 1)
+          if [[ -z "$AAPT" ]]; then
+            echo "Error: Android build tools are required to inspect the release APK."
+            exit 1
+          fi
+          APK_METADATA=$("$AAPT" dump badging "$APK_PATH" | sed -nE "s/^package: name='([^']+)' versionCode='([1-9][0-9]*)' versionName='([^']+)'.*/\1 \2 \3/p")
+          read -r APK_PACKAGE APK_CODE APK_VERSION <<< "$APK_METADATA"
+          # A different application ID installs alongside the existing app.
+          if [[ "$APK_PACKAGE" != "app.auramusic.player" ]]; then
+            echo "Error: expected APK package app.auramusic.player, got '$APK_PACKAGE'."
+            exit 1
+          fi
+          if [[ "$APK_VERSION" != "$VERSION_NAME" ]]; then
+            echo "Error: APK version '$APK_VERSION' does not match release tag '$GITHUB_REF_NAME'."
+            exit 1
+          fi
+
+          SIZE=$(stat -c%s "$APK_PATH")
+          SHA256=$(sha256sum "$APK_PATH" | awk '{print $1}')
+          
+          cat <<EOF > build/app/outputs/flutter-apk/update.json
+          {
+            "versionName": "$VERSION_NAME",
+            "versionCode": $BUILD_NUMBER,
+            "assets": [
+              {
+                "name": "app-arm64-v8a-release.apk",
+                "abi": "arm64-v8a",
+                "size": $SIZE,
+                "sha256": "$SHA256",
+                "versionCode": $APK_CODE
+              }
+            ]
+          }
+          EOF
+          
+          echo "Generated update.json:"
+          cat build/app/outputs/flutter-apk/update.json
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: "Aura Music ${{ github.ref_name }}"
+          make_latest: "true"
+          generate_release_notes: true
+          files: |
+            build/app/outputs/flutter-apk/app-arm64-v8a-release.apk
+            build/app/outputs/flutter-apk/update.json
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
